@@ -21,8 +21,8 @@ class Account(BaseModel):
     balance: float
     hold: Optional[float]
     open: date
-    credit_block: Optional[bool] = Field(..., alias="creditBlock")
-    debit_block: Optional[bool] = Field(..., alias="debitBlock")
+    credit_block: Optional[bool] = Field(None, alias="creditBlock")
+    debit_block: Optional[bool] = Field(None, alias="debitBlock")
     currency: Currency
     favorite: bool
     lpc: Optional[str]
