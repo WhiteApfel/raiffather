@@ -12,22 +12,22 @@ class Account(BaseModel):
     procuration_credentials: dict = Field(..., alias="procurationCredentials")
     alien: bool
     cba: str
-    rma: str
+    rma: Optional[str]
     name: Optional[str]
     type: str
     type_id: str = Field(..., alias="typeId")
     status: str
     status_id: str = Field(..., alias="statusId")
     balance: float
-    hold: float
+    hold: Optional[float]
     open: date
-    credit_block: bool = Field(..., alias="creditBlock")
-    debit_block: bool = Field(..., alias="debitBlock")
+    credit_block: Optional[bool] = Field(..., alias="creditBlock")
+    debit_block: Optional[bool] = Field(..., alias="debitBlock")
     currency: Currency
     favorite: bool
-    lpc: str
-    gpc: str
-    rates: list
+    lpc: Optional[str]
+    gpc: Optional[str]
+    rates: Optional[list]
 
 
 class Card(BaseModel):
@@ -58,6 +58,5 @@ class Card(BaseModel):
 
 
 class Products(BaseModel):
-    cards: list[Card] = Field(..., alias='card')
-    accounts: list[Account] = Field(..., alias='account')
-
+    cards: list[Card] = Field(..., alias="card")
+    accounts: list[Account] = Field(..., alias="account")
