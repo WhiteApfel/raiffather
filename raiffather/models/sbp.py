@@ -13,11 +13,11 @@ class SbpBankLogo(BaseModel):
 
 
 class SbpBank(BaseModel):
-    id: str = Field(..., alias='bankId')
+    id: str = Field(..., alias="bankId")
     name: str
     channel: SbpBankChannel
     priority: bool
-    default: bool = Field(..., alias='defaultSbp')
+    default: bool = Field(..., alias="defaultSbp")
     logo: SbpBankLogo
 
 
@@ -33,20 +33,20 @@ class SbpPam(BaseModel):
 
 
 class SbpInitDetail(BaseModel):
-    src_cba: str = Field(..., alias='srcCba')
+    src_cba: str = Field(..., alias="srcCba")
     phone: str
-    bank_id: str = Field(..., alias='bankId')
+    bank_id: str = Field(..., alias="bankId")
     amount: float
     commission: str
     recipient: str
     message: str
-    bank_name: str = Field(..., alias='bankName')
+    bank_name: str = Field(..., alias="bankName")
     channel: str
     client: str
 
 
 class SbpInit(BaseModel):
-    request_id: str = Field(..., alias='requestId')
+    request_id: str = Field(..., alias="requestId")
     type_id: str = Field(..., alias="typeId")
     detail: SbpInitDetail
     document: str

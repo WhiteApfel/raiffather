@@ -1,70 +1,39 @@
+import base64
 import json
 import os
 import re
 import sys
 import time
+import traceback
+from asyncio import Task
 from datetime import datetime, timedelta, timezone
-from string import ascii_letters, hexdigits, digits
-from ipaddress import IPv4Network, IPv4Address
+from ipaddress import IPv4Address, IPv4Network
 from random import choice, randint, randrange
+from string import hexdigits
 from threading import Thread
-from typing import Union, Optional
+from typing import Optional, Union, AsyncGenerator
 from uuid import uuid4
-import base64
 
-import httpx
+import asyncio
+
+from async_property import async_property
 from fuzzywuzzy import process
-from httpx import Client
-from pullkin import register, listen
+from httpx import AsyncClient
+from loguru import logger
+from pullkin import AioPullkin
+from pullkin.proto.notification import Notification
 from randmac import RandMac
-from tenacity import retry, stop_after_attempt, retry_if_result
+from tenacity import retry, retry_if_result, stop_after_attempt
 
+from raiffather.exceptions.sbp import SBPRecipientNotFound
 from raiffather.models.auth import OauthResponse, ResponseOwner
 from raiffather.models.balance import Balance
 from raiffather.models.device_info import DeviceInfo
-from raiffather.models.products import Products, Account
-from raiffather.models.sbp import SbpBank, SbpPam, SbpInit
+from raiffather.models.products import Account, Products
+from raiffather.models.sbp import SbpBank, SbpInit, SbpPam
+from raiffather.models.transactions import Transactions, Transaction
 
-
-class Kill(Exception):
-    pass
-
-
-class KThread(Thread):
-    def __init__(self, *args, **keywords):
-        Thread.__init__(self, *args, **keywords)
-        self.killed = False
-
-    def start(self):
-        """Start the thread."""
-        self.__run_backup = self.run
-        self.run = self.__run # Force the Thread to install our trace.
-        Thread.start(self)
-
-    def __run(self):
-        """Hacked run function, which installs the
-        trace."""
-        sys.settrace(self.globaltrace)
-        try:
-            self.__run_backup()
-        except Kill:
-            pass
-        self.run = self.__run_backup
-
-    def globaltrace(self, frame, why, arg):
-        if why == 'call':
-            return self.localtrace
-        else:
-            return None
-
-    def localtrace(self, frame, why, arg):
-        if self.killed:
-            if why == 'line':
-                raise Kill()
-        return self.localtrace
-
-    def kill(self):
-        self.killed = True
+logger.disable("raiffather")
 
 
 class Raiffather:
@@ -73,90 +42,122 @@ class Raiffather:
     """
 
     def __init__(self, username, password, device_id: str = None):
-        self.__client = None
-        self.__username = username
-        self.__password = password
-        self.__access_token = None
-        self.__device_info = None
-        self.__fcm_sender_id = 581003993230
-        self.__otps = {}
-        self.__server: Optional[KThread] = None
+        self.__client: AsyncClient = None
+        self.__username: str = username
+        self.__password: str = password
+        self.__access_token: str = None
+        self.__device_info: str = None
+        self.__fcm_sender_id: int = 581003993230
+        self.__otps: dict = {}
         self.me: Optional[ResponseOwner] = None
         self.__products: Optional[Products] = None
+        self.pullkin = AioPullkin()
+        self.__receiving_push: Task = None
 
-    def __enter__(self):
-        if not self.__products: self.__products = self.products()
-        self.push_server()
+    async def __aenter__(self):
+        if not self.__products:
+            self.__products = await self.products()
+        self.__receiving_push = asyncio.get_event_loop().create_task(self.push_server())
         return self
 
-    def __exit__(self, *args):
-        self.__server.kill()
+    async def __aexit__(self, *args):
+        await self.pullkin.close()
+        await self.__client.aclose()
+        self.__receiving_push.cancel()
+        await self.__receiving_push
 
-    def push_server(self):
+    async def push_server(self):
         with open(".persistent_ids.txt", "a+") as f:
             received_persistent_ids = [x.strip() for x in f]
 
-        def check_pushes():
-            def on_notification(obj, notification, data_message):
-                idstr = data_message.persistent_id + "\n"
+        @self.pullkin.on_notification()
+        async def on_notification(obj, notification: Notification, data_message):
+            idstr = data_message.persistent_id + "\n"
+            with open(".persistent_ids.txt", "r") as f:
+                if idstr in f:
+                    return
+            with open(".persistent_ids.txt", "a") as f:
+                f.write(idstr)
+            if "data" in notification.raw_data:
+                server_message_id = notification["data"]["serverMessageId"] + "\n"
                 with open(".persistent_ids.txt", "r") as f:
-                    if idstr in f:
+                    if server_message_id in f:
                         return
                 with open(".persistent_ids.txt", "a") as f:
-                    f.write(idstr)
-                if "data" in notification:
-                    server_message_id = notification['data']['serverMessageId'] + "\n"
-                    with open(".persistent_ids.txt", "r") as f:
-                        if server_message_id in f:
-                            return
-                    with open(".persistent_ids.txt", "a") as f:
-                        f.write(server_message_id)
+                    f.write(server_message_id)
 
-                    mfms_h = {
-                        "x-device-uid": self.device.uid
-                    }
-                    mfms_data = {
-                        "securityToken": base64.b64encode(json.dumps(self.security_token_data).encode()).decode(),
-                        "sessionKey": notification['data']['sessionKey'],
-                        "syncToken": "null"
-                    }
-                    messages = []
-                    r3 = self._client.post(f"https://pushserver.mfms.ru/raif/service/getMessages", headers=mfms_h,
-                                           data=mfms_data)
-                    if r3.status_code == 200:
-                        messages = r3.json()
-                        messages = messages['data']['messageList']
-                    for message in messages:
-                        full_message = base64.b64decode(message["fullMessage"].encode()).decode()
-                        push_id = re.search('<rcasId>([0-9]{10})<\/rcasId>', full_message)[1]
-                        otp = re.search('<otp>([0-9]{6})<\/otp>', full_message)[1]
-                        self.__otps[push_id] = otp
-                    mfms_data = {
-                        "securityToken": base64.b64encode(json.dumps(self.security_token_data).encode()).decode(),
-                        "messageIds": ";".join([message["messageId"] for message in messages])
-                    }
-                    if messages:
-                        r4 = self._client.post(f"https://pushserver.mfms.ru/raif/service/messagesReceived", headers=mfms_h,
-                                               data=mfms_data)
-                        if r4.status_code == 200:
-                            return
-                        raise ValueError(f'Received{r4.status_code}')
-            listen(self.device.fcm_cred, on_notification, received_persistent_ids, timer=1)
-        self.__server = KThread(target=check_pushes)
-        self.__server.start()
+                mfms_h = {"x-device-uid": self.device.uid}
+                mfms_data = {
+                    "securityToken": base64.b64encode(
+                        json.dumps(self.security_token_data).encode()
+                    ).decode(),
+                    "sessionKey": notification["data"]["sessionKey"],
+                    "syncToken": "null",
+                }
+                messages = []
+                r3 = await self._client.post(
+                    f"https://pushserver.mfms.ru/raif/service/getMessages",
+                    headers=mfms_h,
+                    data=mfms_data,
+                )
+                if r3.status_code == 200:
+                    messages = r3.json()
+                    messages = messages["data"]["messageList"]
+                for message in messages:
+                    full_message = base64.b64decode(
+                        message["fullMessage"].encode()
+                    ).decode()
+                    push_id = re.search("<rcasId>([0-9]{10})<\/rcasId>", full_message)[
+                        1
+                    ]
+                    otp = re.search("<otp>([0-9]{6})<\/otp>", full_message)[1]
+                    self.__otps[push_id] = otp
+                mfms_data = {
+                    "securityToken": base64.b64encode(
+                        json.dumps(self.security_token_data).encode()
+                    ).decode(),
+                    "messageIds": ";".join(
+                        [message["messageId"] for message in messages]
+                    ),
+                }
+                if messages:
+                    r4 = await self._client.post(
+                        f"https://pushserver.mfms.ru/raif/service/messagesReceived",
+                        headers=mfms_h,
+                        data=mfms_data,
+                    )
+                    if r4.status_code == 200:
+                        return
+                    raise ValueError(f"Received{r4.status_code}")
 
-    def wait_code(self, push_id):
+        self.pullkin.credentials = self.device.fcm_cred
+        self.pullkin.persistent_ids = received_persistent_ids
+        try:
+            push_listener = await self.pullkin.listen_coroutine()
+        except asyncio.exceptions.CancelledError:
+            return
+
+        try:
+            while True:
+                await push_listener.asend(None)
+        except asyncio.exceptions.CancelledError:
+            ...
+        except:
+            print(traceback.format_exc())
+
+    async def wait_code(self, push_id):
         x = 0
         while x < 60:
+            logger.debug(f"Wait push #{push_id} i={x} in {self.__otps}")
             if push_id in self.__otps:
                 return self.__otps.pop(push_id)
             x += 1
-            time.sleep(2)
+            await asyncio.sleep(2)
 
     @property
-    def _client(self) -> Client:
+    def _client(self) -> AsyncClient:
         if not self.__client:
-            self.__client = Client()
+            self.__client = AsyncClient(timeout=10.0)
         return self.__client
 
     @property
@@ -174,114 +175,91 @@ class Raiffather:
             "password": self.__password,
             "platform": "android",
             "username": self.__username,
-            "version": "5050059"
+            "version": "5050059",
         }
 
     def preauth_bearer_token(self):
         return base64.b64encode(b"oauthUser:oauthPassword!@").decode()
 
-    @property
-    def _access_token(self):
+    @async_property
+    async def _access_token(self):
         if not self.__access_token or self.__access_token[1] < time.time():
-            self._auth()
+            await self._auth()
         return self.__access_token[0]
 
-    def _auth(self):
+    async def _auth(self):
         headers = {
-            'Authorization': f'Basic {self.preauth_bearer_token()}',
-            'User-Agent': 'Raiffeisen 5.50.59 / Google Pixel Pfel (Android 11) / false',
-            'RC-Device': 'android'
+            "Authorization": f"Basic {self.preauth_bearer_token()}",
+            "User-Agent": "Raiffeisen 5.50.59 / Google Pixel Pfel (Android 11) / false",
+            "RC-Device": "android",
         }
-        r = self._client.post('https://amobile.raiffeisen.ru/oauth/token', json=self.oauth_token_data(),
-                              headers=headers)
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/oauth/token",
+            json=self.oauth_token_data(),
+            headers=headers,
+        )
         if r.status_code == 200:
             parsed_r = OauthResponse(**r.json())
             self.me = parsed_r.resource_owner
-            self.__access_token = (parsed_r.access_token, int(time.time()) + parsed_r.expires_in - 2)
+            self.__access_token = (
+                parsed_r.access_token,
+                int(time.time()) + parsed_r.expires_in - 2,
+            )
             return parsed_r
         else:
-            raise ValueError(f'Status: {r.status_code}')
+            raise ValueError(f"Status: {r.status_code}")
 
-    @retry(stop=stop_after_attempt(2), retry=retry_if_result(lambda x: str(x) == "Unauthorized"))
-    def balance(self):
-        """
-        Общий баланс со всех счетов. рассчитанный по курсу ЦБ. В приложении отображается в самой верхней части.
-        :return:
-        """
-        headers = {
-            'Authorization': f'Bearer {self._access_token}',
-            'User-Agent': 'Raiffeisen 5.50.59 / Google Pixel Pfel (Android 11) / false',
-            'RC-Device': 'android'
+    @async_property
+    async def authorized_headers(self):
+        return {
+            "Authorization": f"Bearer {await self._access_token}",
+            "User-Agent": f"Raiffeisen {self.device.app_version} / {self.device.model} ({self.device.os} {self.device.os_version}) / false",
+            "RC-Device": "android",
         }
-        r = self._client.get('https://amobile.raiffeisen.ru/rest/1/balance', headers=headers)
-        if r.status_code == 200:
-            parsed_r = [Balance(**b) for b in r.json()]
-            return parsed_r
-        elif r.status_code == 401:
-            self._auth()
-            raise ValueError("Unauthorized")
-        else:
-            raise ValueError(f'Status: {r.status_code}')
-
-    @retry(stop=stop_after_attempt(2), retry=retry_if_result(lambda x: str(x) == "Unauthorized"))
-    def products(self):
-        headers = {
-            'Authorization': f'Bearer {self._access_token}',
-            'User-Agent': 'Raiffeisen 5.50.59 / Google Pixel Pfel (Android 11) / false',
-            'RC-Device': 'android'
-        }
-        r = self._client.get('https://amobile.raiffeisen.ru/rest/1/product/list', headers=self.authorized_headers)
-        if r.status_code == 200:
-            parsed_r = Products(**r.json())
-            return parsed_r
-        elif r.status_code == 403:
-            self._auth()
-            raise ValueError("Unauthorized")
-        else:
-            raise ValueError(f'Status: {r.status_code}')
 
     @property
     def device(self) -> DeviceInfo:
         if not self.__device_info:
             filename = f'{os.environ.get("HOME", ".")}/.raiffather_device_info.json'
             if not os.path.exists(filename):
-                fcm_cred = register(sender_id=self.__fcm_sender_id)
+                fcm_cred = self.pullkin.register(sender_id=self.__fcm_sender_id)
                 network = IPv4Network(f"192.168.0.0/16")
-                random_ip = IPv4Address(randrange(int(network.network_address) + 1, int(network.broadcast_address) - 1))
+                random_ip = IPv4Address(
+                    randrange(
+                        int(network.network_address) + 1,
+                        int(network.broadcast_address) - 1,
+                    )
+                )
                 data = {
                     "app_version": "5.50.59",
                     "router_ip": str(random_ip),
                     "router_mac": "02:00:00:00:00:00",
                     "ip": "fe80::cc10:57ff:fe41:f1a7",
-                    "screen_y": choice(['1920', '2340', '2400']),
+                    "screen_y": choice(["1920", "2340", "2400"]),
                     "screen_x": "1080",
                     "os": "Android",
                     "name": "raiffather",
-                    "serial_number": "".join([choice(hexdigits[:-6]) for _ in range(8)]),
+                    "serial_number": "".join(
+                        [choice(hexdigits[:-6]) for _ in range(8)]
+                    ),
                     "provider": "PH47RipsRD9WamEkODcrWVg2ckhmUDZqYH4+Cg",
                     "mac": str(RandMac()),
                     "os_version": "11",
                     "uid": "".join([choice(hexdigits[:-6]) for _ in range(40)]),
                     "model": "WhiteApfel Raiffather",
-                    "push": fcm_cred['fcm']['token'],
-                    "user_security_hash": "".join([choice('1234567890ABCDEF') for _ in range(40)]),
+                    "push": fcm_cred["fcm"]["token"],
+                    "user_security_hash": "".join(
+                        [choice("1234567890ABCDEF") for _ in range(40)]
+                    ),
                     "fingerprint": str(randint(1000000000, 9999999999)),
                     "uuid": uuid4().hex,
-                    "fcm_cred": fcm_cred
+                    "fcm_cred": fcm_cred,
                 }
-                json.dump(data, open(filename, 'w+'))
+                json.dump(data, open(filename, "w+"))
                 self.__device_info = DeviceInfo(**data)
             else:
                 self.__device_info = DeviceInfo(**json.load(open(filename, "r")))
         return self.__device_info
-
-    @property
-    def authorized_headers(self):
-        return {
-            'Authorization': f'Bearer {self._access_token}',
-            'User-Agent': f'Raiffeisen {self.device.app_version} / {self.device.model} ({self.device.os} {self.device.os_version}) / false',
-            'RC-Device': 'android'
-        }
 
     @property
     def security_token_data(self):
@@ -308,180 +286,284 @@ class Raiffather:
             "deviceUid": self.device.uid,
             "deviceModel": self.device.model,
             "pushAddress": self.device.push,
-            "userSecurityHash": self.device.user_security_hash
+            "userSecurityHash": self.device.user_security_hash,
         }
 
-    def register_device(self):
+    async def register_device(self):
         data = {
             "otp": {
                 "deviceName": f"{self.device.model} {datetime.now().strftime('%Y-%m-%d %H:%M')}",
                 "deviceUid": self.device.uid,
                 "fingerPrint": self.device.fingerprint,
                 "pushId": self.device.push,
-                "securityToken": base64.b64encode(json.dumps(self.security_token_data).encode()).decode()
+                "securityToken": base64.b64encode(
+                    json.dumps(self.security_token_data).encode()
+                ).decode(),
             }
         }
-        r = self._client.post("https://amobile.raiffeisen.ru/rest/1/push-address/push/control", json=data,
-                              headers=self.authorized_headers)
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/rest/1/push-address/push/control",
+            json=data,
+            headers=await self.authorized_headers,
+        )
         if r.status_code == 200:
             request_id = r.json()["requestId"]
-            r2 = self._client.post(f"https://amobile.raiffeisen.ru/rest/1/push-address/push/control/{request_id}/sms",
-                                   headers=self.authorized_headers, json="")
+            r2 = await self._client.post(
+                f"https://amobile.raiffeisen.ru/rest/1/push-address/push/control/{request_id}/sms",
+                headers=await self.authorized_headers,
+                json="",
+            )
             if r2.status_code == 201:
                 return request_id
         return r
 
-    def register_device_verify(self, request_id: str, code: str):
-        r = self._client.put(f"https://amobile.raiffeisen.ru/rest/1/push-address/push/control/{request_id}/sms",
-                             headers=self.authorized_headers, json={"code": code})
+    async def register_device_verify(self, request_id: str, code: str):
+        r = await self._client.put(
+            f"https://amobile.raiffeisen.ru/rest/1/push-address/push/control/{request_id}/sms",
+            headers=await self.authorized_headers,
+            json={"code": code},
+        )
         if r.status_code == 204:
             return True
         return False
 
-    def c2c(self, amount: Union[float, int]):
+    @retry(
+        stop=stop_after_attempt(2),
+        retry=retry_if_result(lambda x: str(x) == "Unauthorized"),
+    )
+    async def balance(self) -> list[Balance]:
+        """
+        Общий баланс со всех счетов. рассчитанный по курсу ЦБ. В приложении отображается в самой верхней части.
+        :return:
+        """
+        r = await self._client.get(
+            "https://amobile.raiffeisen.ru/rest/1/balance",
+            headers=await self.authorized_headers,
+        )
+        if r.status_code == 200:
+            parsed_r = [Balance(**b) for b in r.json()]
+            return parsed_r
+        elif r.status_code == 401:
+            await self._auth()
+            raise ValueError("Unauthorized")
+        else:
+            raise ValueError(f"Status: {r.status_code}")
+
+    @retry(
+        stop=stop_after_attempt(2),
+        retry=retry_if_result(lambda x: str(x) == "Unauthorized"),
+    )
+    async def products(self) -> Products:
+        r = await self._client.get(
+            "https://amobile.raiffeisen.ru/rest/1/product/list",
+            headers=await self.authorized_headers,
+        )
+        if r.status_code == 200:
+            with open("fjsadhsg.json", "w+") as f:
+                f.write(r.text)
+            parsed_r = Products(**r.json())
+            return parsed_r
+        elif r.status_code == 403:
+            await self._auth()
+            raise ValueError("Unauthorized")
+        else:
+            raise ValueError(f"Status: {r.status_code}")
+
+    async def c2c(self, amount: Union[float, int]):
         """
         Надо деить. Мне лень. Там муторно со счетами. Лучше сначала СБП замучулькаю
         :param amount:
         :return:
         """
         data = {
-            "amount": {
-                "currency": 643,
-                "sum": 50.0
-            },
-            "commission": {
-                "currency": 810,
-                "sum": 50.0
-            },
-            "dst": {
-                "pan": "5321304044087960",
-                "type": "pan"
-            },
+            "amount": {"currency": 643, "sum": 50.0},
+            "commission": {"currency": 810, "sum": 50.0},
+            "dst": {"pan": "5321304044087960", "type": "pan"},
             "salary": False,
-            "src": {
-                "cardId": 83159519,
-                "type": "cardId"
-            }
+            "src": {"cardId": 83159519, "type": "cardId"},
         }
-        r = self._client.post("https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer", headers=self.authorized_headers, json=data)
+        r = await self._client.post(
+            "https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer",
+            headers=await self.authorized_headers,
+            json=data,
+        )
         if r.status_code == 200:
             rjson = r.json()
-            request_id = rjson['requestId']
-            data2 = {
-                "deviceUid": self.device.uid,
-                "pushId": self.device.push
-            }
-            r2 = self._client.post(f"https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer/{request_id}/PUSHOTP", json=data2, headers=self.authorized_headers)
+            request_id = rjson["requestId"]
+            data2 = {"deviceUid": self.device.uid, "pushId": self.device.push}
+            r2 = await self._client.post(
+                f"https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer/{request_id}/PUSHOTP",
+                json=data2,
+                headers=await self.authorized_headers,
+            )
             if r2.status_code == 200:
-                push_id = r2.json()['pushId']
+                push_id = r2.json()["pushId"]
                 otp = self.wait_code(push_id)
                 print(otp)
 
-    def sbp_settings(self):
-        return self._client.get("https://amobile.raiffeisen.ru/rest/1/sbp/settings", headers=self.authorized_headers).json()
+    # СБП
 
-    def sbp_banks(self, phone, cba: str = None):
+    async def sbp_settings(self):
+        return (
+            await self._client.get(
+                "https://amobile.raiffeisen.ru/rest/1/sbp/settings",
+                headers=await self.authorized_headers,
+            )
+        ).json()
+
+    async def sbp_banks(self, phone, cba: str = None):
         if not self.__products:
-            self.__products = self.products()
-        data = {
-            "phone": phone,
-            "srcCba": cba or self.sbp_settings()['cba']
-        }
-        r = self._client.post("https://amobile.raiffeisen.ru/rest/1/transfer/contact/bank", headers=self.authorized_headers, json=data)
+            self.__products = await self.products()
+        data = {"phone": phone, "srcCba": cba or self.sbp_settings()["cba"]}
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/contact/bank",
+            headers=await self.authorized_headers,
+            json=data,
+        )
         if r.status_code == 200:
             return [SbpBank(**bank) for bank in r.json()]
 
-    def sbp_pam(self, bank: str, phone: str, cba: str = None):
+    async def sbp_pam(self, bank: str, phone: str, cba: str = None):
         data = {
             "bankId": bank,
             "phone": phone,
-            "srcCba": cba or self.sbp_settings()['cba']
+            "srcCba": cba or (await self.sbp_settings())["cba"],
         }
-        r = self._client.post("https://amobile.raiffeisen.ru/rest/1/transfer/contact/pam",
-                              headers=self.authorized_headers, json=data)
-        # TODO добавить проверку на неналичие счёта в банке
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/contact/pam",
+            headers=await self.authorized_headers,
+            json=data,
+        )
         if r.status_code == 200:
             return SbpPam(**r.json())
+        elif r.status_code == 417:
+            raise SBPRecipientNotFound(r.json()["_form"][0])
+        else:
+            raise ValueError(f"{r.status_code}: {r.text}")
 
-    def sbp_commission(self, bank, phone, amount, cba: str = None):
+    async def sbp_commission(self, bank, phone, amount, cba: str = None):
         data = {
             "amount": float(amount),
             "bankId": bank,
             "phone": phone,
-            "srcCba": cba or self.sbp_settings()['cba']
+            "srcCba": cba or self.sbp_settings()["cba"],
         }
-        r = self._client.post("https://amobile.raiffeisen.ru/rest/1/transfer/contact/commission",
-                              headers=self.authorized_headers, json=data)
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/contact/commission",
+            headers=await self.authorized_headers,
+            json=data,
+        )
         if r.status_code == 200:
             return r.json()
 
-    def sbp_init(self, amount, bank, phone, message, cba: str = None):
+    async def sbp_init(self, amount, bank, phone, message, cba: str = None):
         data = {
             "amount": float(amount),
             "bankId": bank,
             # "commission": 0.0,
             # "currency": "810",
-            "message": message or '',
+            "message": message or "",
             "phone": phone,
             "recipient": "",
             "srcAccountId": self.__products.accounts[0].id,
-            "srcCba": cba or  self.sbp_settings()['cba'],
-            "template": False
+            "srcCba": cba or self.sbp_settings()["cba"],
+            "template": False,
         }
-        # r = self._client.get("https://amobile.raiffeisen.ru/rest/1/transfer/contact", headers=self.authorized_headers)
-        r = self._client.post("https://amobile.raiffeisen.ru/rest/1/transfer/contact",
-                              headers=self.authorized_headers, json=data)
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/contact",
+            headers=await self.authorized_headers,
+            json=data,
+        )
         if r.status_code == 200:
             return SbpInit(**r.json())
 
-    def sbp_prepare(self):
-        r = self._client.get("https://amobile.raiffeisen.ru/rest/1/transfer/contact", headers=self.authorized_headers)
+    async def sbp_prepare(self):
+        r = await self._client.get(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/contact",
+            headers=await self.authorized_headers,
+        )
         if r.status_code == 200:
             return True
 
-    def sbp_accounts(self):
-        r = self._client.get("https://amobile.raiffeisen.ru/rest/1/transfer/contact/account?alien=false", headers=self.authorized_headers)
+    async def sbp_accounts(self):
+        r = await self._client.get(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/contact/account?alien=false",
+            headers=await self.authorized_headers,
+        )
         if r.status_code == 200:
-            return [Account(a) for a in r.json()]
+            return [Account(**a) for a in r.json()]
 
     def sbp_bank_fuzzy_search(self, banks: list, bank: str):
         return process.extractOne(bank, banks)[0]
 
-    def sbp_send_push(self, request_id):
-        data = {
-            "deviceUid": self.device.uid,
-            "pushId": self.device.push
-        }
+    async def sbp_send_push(self, request_id):
+        data = {"deviceUid": self.device.uid, "pushId": self.device.push}
 
-        r = self._client.post(f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push", json=data,
-                               headers=self.authorized_headers)
+        r = await self._client.post(
+            f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push",
+            json=data,
+            headers=await self.authorized_headers,
+        )
         if r.status_code == 201:
-            push_id = r.json()['pushId']
-            otp = self.wait_code(push_id)
+            push_id = r.json()["pushId"]
+            print("awaiting code")
+            otp = await self.wait_code(push_id)
+            print("code is", otp)
             return otp
+        else:
+            print(r.status_code, r.text)
 
-    def sbp_push_verify(self, request_id, code):
-        r = self._client.put(f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push",
-                             headers=self.authorized_headers, json={"code": code})
+    async def sbp_push_verify(self, request_id, code):
+        r = await self._client.put(
+            f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push",
+            headers=await self.authorized_headers,
+            json={"code": code},
+        )
         if r.status_code == 204:
             return True
         return False
 
-    def sbp(self, phone, bank, amount, comment=None):
-        cba = self.sbp_settings()['cba']
-        self.sbp_prepare()
-        banks = self.sbp_banks(phone=phone, cba=cba)
+    async def sbp(self, phone, bank, amount, comment=None):
+        cba = (await self.sbp_settings())["cba"]
+        await self.sbp_prepare()
+        banks = await self.sbp_banks(phone=phone, cba=cba)
         bank_name = self.sbp_bank_fuzzy_search([b.name for b in banks], bank)
         bank = next((bank for bank in banks if bank.name == bank_name), None)
         if bank:
-            pam = self.sbp_pam(bank=bank.id, phone=phone, cba=cba)
-            com = float(self.sbp_commission(bank=bank.id, phone=phone, amount=float(amount), cba=cba)['commission'])
-            init = self.sbp_init(float(amount), bank.id, phone, comment, cba)
-            code = self.sbp_send_push(init.request_id)
-            success = self.sbp_push_verify(init.request_id, code)
+            pam = await self.sbp_pam(bank=bank.id, phone=phone, cba=cba)
+            com = float(
+                (
+                    await self.sbp_commission(
+                        bank=bank.id, phone=phone, amount=float(amount), cba=cba
+                    )
+                )["commission"]
+            )
+            init = await self.sbp_init(float(amount), bank.id, phone, comment, cba)
+            print("Verifying...")
+            code = await self.sbp_send_push(init.request_id)
+            print("Verified!")
+            success = await self.sbp_push_verify(init.request_id, code)
             return success
 
+    async def transactions(self, size: int = 25, page: int = 0, desc: bool = True):
+        r = await self._client.get(
+            f"https://amobile.raiffeisen.ru/rths/history/v1/transactions?size={size}&sort=date&page={page}&order={'desc' if desc else 'asc'}",
+            headers=await self.authorized_headers,
+            timeout=20,
+        )
+        if r.status_code == 200:
+            return Transactions(**r.json())
 
-
-
-
+    async def global_history_generator(self) -> AsyncGenerator[Transaction, None]:
+        first_transaction: Transaction = None
+        page = 0
+        while True:
+            transactions = await self.transactions(page=page)
+            if first_transaction != transactions.list[0]:
+                if not first_transaction:
+                    first_transaction = transactions.list[0]
+                for transaction in transactions.list:
+                    yield transaction
+                page += 1
+            else:
+                break

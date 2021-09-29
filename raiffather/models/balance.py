@@ -5,7 +5,7 @@ from pydantic.dataclasses import Field
 
 
 class Currency(BaseModel):
-    id: Literal['RUR', 'USD', 'EUR']
+    id: Literal["RUR", "USD", "EUR"]
     symbol: str
     name: str
     precision: int
