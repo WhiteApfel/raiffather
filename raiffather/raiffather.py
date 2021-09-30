@@ -663,9 +663,7 @@ class Raiffather:
                 ).commission
             )
             init = await self.sbp_init(float(amount), bank.id, phone, comment, cba)
-            print("Verifying...")
             code = await self.sbp_send_push(init.request_id)
-            print("Verified!")
             success = await self.sbp_push_verify(init.request_id, code)
             return success
 
