@@ -2,7 +2,6 @@ import base64
 import json
 import os
 import re
-import sys
 import time
 import traceback
 from asyncio import Task
@@ -10,7 +9,6 @@ from datetime import datetime, timedelta, timezone
 from ipaddress import IPv4Address, IPv4Network
 from random import choice, randint, randrange
 from string import hexdigits
-from threading import Thread
 from typing import Optional, Union, AsyncGenerator, List
 from uuid import uuid4
 
@@ -41,7 +39,7 @@ class Raiffather:
     Этот класс будет удобен для работы с апишкой. Не ешь меня. Я тебе пригожусь.
     """
 
-    def __init__(self, username, password, device_id: str = None):
+    def __init__(self, username, password):
         self.__client: AsyncClient = None
         self.__username: str = username
         self.__password: str = password
@@ -96,7 +94,6 @@ class Raiffather:
                     "sessionKey": notification["data"]["sessionKey"],
                     "syncToken": "null",
                 }
-                messages = []
                 messages_response = await self._client.post(
                     f"https://pushserver.mfms.ru/raif/service/getMessages",
                     headers=mfms_h,
@@ -113,10 +110,10 @@ class Raiffather:
                     full_message = base64.b64decode(
                         message["fullMessage"].encode()
                     ).decode()
-                    push_id = re.search("<rcasId>([0-9]{10})<\/rcasId>", full_message)[
+                    push_id = re.search("<rcasId>([0-9]{10})</rcasId>", full_message)[
                         1
                     ]
-                    otp = re.search("<otp>([0-9]{6})<\/otp>", full_message)[1]
+                    otp = re.search("<otp>([0-9]{6})</otp>", full_message)[1]
                     self.__otps[push_id] = otp
                 mfms_data = {
                     "securityToken": base64.b64encode(
@@ -148,7 +145,7 @@ class Raiffather:
                 await push_listener.asend(None)
         except asyncio.exceptions.CancelledError:
             ...
-        except:
+        except Exception:
             print(traceback.format_exc())
 
     async def wait_code(self, push_id):
@@ -219,7 +216,8 @@ class Raiffather:
     async def authorized_headers(self):
         return {
             "Authorization": f"Bearer {await self._access_token}",
-            "User-Agent": f"Raiffeisen {self.device.app_version} / {self.device.model} ({self.device.os} {self.device.os_version}) / false",
+            "User-Agent": f"Raiffeisen {self.device.app_version} / {self.device.model} "
+                          f"({self.device.os} {self.device.os_version}) / false",
             "RC-Device": "android",
         }
 
@@ -494,7 +492,7 @@ class Raiffather:
             raise ValueError(f"{r.status_code}: {r.text}")
 
     async def sbp_commission(
-        self, bank, phone, amount, cba: str = None
+            self, bank, phone, amount, cba: str = None
     ) -> SbpCommission:
         """
         Расчёт комиссии для перевода по СБП
@@ -524,7 +522,7 @@ class Raiffather:
             )
 
     async def sbp_init(
-        self, amount, bank, phone, message=None, cba: str = None
+            self, amount, bank, phone, message=None, cba: str = None
     ) -> SbpInit:
         """
         Ещё один этап для проведения перевода по СБП
