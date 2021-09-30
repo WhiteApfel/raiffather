@@ -26,7 +26,7 @@ from tenacity import retry, retry_if_result, stop_after_attempt
 from raiffather.exceptions.sbp import SBPRecipientNotFound
 from raiffather.models.auth import OauthResponse, ResponseOwner
 from raiffather.models.balance import Balance
-from raiffather.models.c2c import C2cInit, E3DSOTPData
+from raiffather.models.c2c import C2cInit, E3DSOTPData, C2cRetrieve
 from raiffather.models.device_info import DeviceInfo
 from raiffather.models.products import Account, Products
 from raiffather.models.sbp import SbpBank, SbpInit, SbpPam, SbpSettings, SbpCommission
@@ -406,7 +406,21 @@ class Raiffather:
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def c2c_fees(self, amount, src=83159519, dst="4111111111111111"):
+    async def c2c_retrieve(self):
+        """
+        Подготавливает к проведению перевода по номеру карты, обязательный пунктик
+        :return: bool
+        """
+        r = await self._client.get(
+            "https://e-commerce.raiffeisen.ru/c2c/v2.0/retrieveInitialData",
+            headers=await self.authorized_headers,
+        )
+        if r.status_code == 200:
+            return C2cRetrieve(**r.json())
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
+
+    async def c2c_fees(self, amount, dst=83159519, src="4111111111111111"):
         """
         Рассчитывает комиссию со стороны Райфа для перевода.
         Другие банки могут взять комиссию за стягивание или пополнение
@@ -417,9 +431,9 @@ class Raiffather:
             headers=await self.authorized_headers,
             json={
                 "amount": 1.0,
-                "dst": {"pan": dst},
-                "feeCurrency": 810,
-                "src": {"serno": src},
+                "dst": {"serno": dst},
+                "feeCurrency": 643,
+                "src": {"pan": src},
                 "transferCurrency": 643,
             },
         )
@@ -428,9 +442,9 @@ class Raiffather:
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def c2c_init(self):
+    async def c2c_init(self, amount):
         """
-        Инициализирует намерение перевода. ВОзвращает какие-то данные
+        Инициализирует намерение перевода. Возвращает какие-то данные
         Нужная штука, если хотите сделать перевод, без неё вообще нельзя, гы
         :return: bool
         """
@@ -438,7 +452,7 @@ class Raiffather:
             "https://e-commerce.raiffeisen.ru/ws/link/c2c/v1.0/fees",
             headers=await self.authorized_headers,
             json={
-                "amount": {"currency": 643, "sum": 1.0},
+                "amount": {"currency": 643, "sum": amount},
                 "dst": {"cardId": 83159519, "type": "cardId"},
                 "commission": {"currency": 810, "sum": 0.0},
                 "src": {"tcpId": 233841, "type": "tcpId"},
@@ -451,11 +465,15 @@ class Raiffather:
             raise ValueError(f"{r.status_code} {r.text}")
 
     async def c2c_e3dsotp(self, request_id):
-        data = {"deviceUid": self.device.uid, "pushId": self.device.push}
+        """
+        Получение данных для перенаправления на 3DS
 
+        :param request_id: номер заявки на перевод, получается в self.c2c_init()
+        :return:
+        """
         e3dsotp_response = await self._client.post(
             f"https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer/{request_id}/E3DSOTP",
-            json="data",
+            json="",
             headers=await self.authorized_headers,
         )
         if e3dsotp_response.status_code == 200:
@@ -463,17 +481,21 @@ class Raiffather:
         else:
             raise ValueError(f"{e3dsotp_response.status_code} {e3dsotp_response.text}")
 
-    async def c2c_e3ds_pareq(self):
+    async def c2c_e3ds_pareq(self, pareq):
         data = {
             "MD": "",
             "TermUrl": "https://imobile.raiffeisen.ru/3ds/1400474370",
-            "PaReq": "iofdjgjfdidfg",
+            "PaReq": pareq,
         }
         r = await self._client.post(
             "https://ds.mirconnect.ru/vbv2/pareq",
             headers=await self.authorized_headers,
             data=data,
         )
+        if r.status_code == 200:
+            return r.text
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
 
     async def c2c(self, amount: Union[float, int]):
         """

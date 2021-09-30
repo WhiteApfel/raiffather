@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from raiffather.models.products import Card
+
 
 class C2cInitMethod(BaseModel):
     method: Literal["E3DSOTP"]
@@ -35,3 +37,29 @@ class E3DSOTPData(BaseModel):
     wait: int = Field(..., alias="await")
     acs_url: str = Field(..., alias="acs_url")
     pareq: str
+
+
+class C2cTpc(BaseModel):
+    id: int
+    name: str
+    bin: int
+    last_digits: int = Field(..., alias="lastDigits")
+    active: bool
+    payment_system: str = Field(..., alias="paymentSystem")
+
+
+class C2cCashLimit(BaseModel):
+    left_day: float = Field(..., alias="leftDay")
+    left_month: float = Field(..., alias="leftMonth")
+
+
+class C2cCard(BaseModel):
+    card: Card
+    cash_limit: C2cCashLimit = Field(..., alias="cashLimit")
+
+
+class C2cRetrieve(BaseModel):
+    cards_ext: list[C2cCard] = Field(..., alias="cardsExt")
+    tpc: list[C2cTpc]
+    disabled_bins_for_c2c: list[int] = Field(..., alias="disabledBinsForC2C")
+    us_bins: list[int] = Field(..., alias="usBins")
