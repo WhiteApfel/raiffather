@@ -58,5 +58,5 @@ class SbpInit(BaseModel):
 
 class SbpSettings(BaseModel):
     cba: str
-    allow_transferred: bool = Field(..., alias="allowTransferred")
+    allow_transfers: bool = Field(..., alias="allowTransfers")
     default_bank: bool = Field(..., alias="defaultBank")
