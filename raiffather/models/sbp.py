@@ -32,6 +32,10 @@ class SbpPam(BaseModel):
     limits: SbpPamLimits
 
 
+class SbpCommission(BaseModel):
+    commission: int
+
+
 class SbpInitDetail(BaseModel):
     src_cba: str = Field(..., alias="srcCba")
     phone: str
@@ -50,3 +54,9 @@ class SbpInit(BaseModel):
     type_id: str = Field(..., alias="typeId")
     detail: SbpInitDetail
     document: str
+
+
+class SbpSettings(BaseModel):
+    cba: str
+    allow_transferred: bool = Field(..., alias="allowTransferred")
+    default_bank: bool = Field(..., alias="defaultBank")
