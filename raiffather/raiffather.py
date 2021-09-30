@@ -11,7 +11,7 @@ from ipaddress import IPv4Address, IPv4Network
 from random import choice, randint, randrange
 from string import hexdigits
 from threading import Thread
-from typing import Optional, Union, AsyncGenerator
+from typing import Optional, Union, AsyncGenerator, List
 from uuid import uuid4
 
 import asyncio
@@ -57,7 +57,9 @@ class Raiffather:
     async def __aenter__(self):
         if not self.__products:
             self.__products = await self.products()
-        self.__receiving_push = asyncio.get_event_loop().create_task(self._push_server())
+        self.__receiving_push = asyncio.get_event_loop().create_task(
+            self._push_server()
+        )
         return self
 
     async def __aexit__(self, *args):
@@ -104,7 +106,9 @@ class Raiffather:
                     messages = messages_response.json()
                     messages = messages["data"]["messageList"]
                 else:
-                    raise ValueError(f"{messages_response.status_code} {messages_response.text}")
+                    raise ValueError(
+                        f"{messages_response.status_code} {messages_response.text}"
+                    )
                 for message in messages:
                     full_message = base64.b64decode(
                         message["fullMessage"].encode()
@@ -326,9 +330,13 @@ class Raiffather:
             )
             if send_sms_response.status_code == 201:
                 return request_id
-            raise ValueError(f"{send_sms_response.status_code} {send_sms_response.text}")
+            raise ValueError(
+                f"{send_sms_response.status_code} {send_sms_response.text}"
+            )
         else:
-            raise ValueError(f"{register_response.status_code} {register_response.text}")
+            raise ValueError(
+                f"{register_response.status_code} {register_response.text}"
+            )
 
     async def register_device_verify(self, request_id: str, code: str):
         """
@@ -455,7 +463,9 @@ class Raiffather:
         if sbp_banks_response.status_code == 200:
             return [SbpBank(**bank) for bank in sbp_banks_response.json()]
         else:
-            raise ValueError(f"{sbp_banks_response.status_code} {sbp_banks_response.text}")
+            raise ValueError(
+                f"{sbp_banks_response.status_code} {sbp_banks_response.text}"
+            )
 
     async def sbp_pam(self, bank_id: str, phone: str, cba: str = None) -> SbpPam:
         """
@@ -483,7 +493,9 @@ class Raiffather:
         else:
             raise ValueError(f"{r.status_code}: {r.text}")
 
-    async def sbp_commission(self, bank, phone, amount, cba: str = None) -> SbpCommission:
+    async def sbp_commission(
+        self, bank, phone, amount, cba: str = None
+    ) -> SbpCommission:
         """
         Расчёт комиссии для перевода по СБП
 
@@ -507,9 +519,23 @@ class Raiffather:
         if comission_response.status_code == 200:
             return SbpCommission(**comission_response.json())
         else:
-            raise ValueError(f"{comission_response.status_code} {comission_response.text}")
+            raise ValueError(
+                f"{comission_response.status_code} {comission_response.text}"
+            )
 
-    async def sbp_init(self, amount, bank, phone, message, cba: str = None):
+    async def sbp_init(
+        self, amount, bank, phone, message=None, cba: str = None
+    ) -> SbpInit:
+        """
+        Ещё один этап для проведения перевода по СБП
+
+        :param amount: сумма перевода в рублях
+        :param bank: id банка получателя, можно узнать в self.sbp_banks()
+        :param phone: номер телефона получателя
+        :param message: комментарий к перевод
+        :param cba: номер вашего аккаунта в ЦБ, можно узнать в self.sbp_settings()
+        :return: SbpInit
+        """
         data = {
             "amount": float(amount),
             "bankId": bank,
@@ -519,64 +545,111 @@ class Raiffather:
             "phone": phone,
             "recipient": "",
             "srcAccountId": self.__products.accounts[0].id,
-            "srcCba": cba or self.sbp_settings()["cba"],
+            "srcCba": cba or (await self.sbp_settings()).cba,
             "template": False,
         }
-        r = await self._client.post(
+        init_response = await self._client.post(
             "https://amobile.raiffeisen.ru/rest/1/transfer/contact",
             headers=await self.authorized_headers,
             json=data,
         )
-        if r.status_code == 200:
-            return SbpInit(**r.json())
+        if init_response.status_code == 200:
+            return SbpInit(**init_response.json())
+        else:
+            raise ValueError(f"{init_response.status_code} {init_response.text}")
 
-    async def sbp_prepare(self):
+    async def sbp_prepare(self) -> bool:
+        """
+        Подготавливает к проведению перевода по СБП, обязательный пунктик
+        :return: bool
+        """
         r = await self._client.get(
             "https://amobile.raiffeisen.ru/rest/1/transfer/contact",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
             return True
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
 
-    async def sbp_accounts(self):
-        r = await self._client.get(
+    async def sbp_accounts(self) -> List[Account]:
+        """
+        Доступные счета для отправки денег
+        :return: list[Account]
+        """
+        accounts_response = await self._client.get(
             "https://amobile.raiffeisen.ru/rest/1/transfer/contact/account?alien=false",
             headers=await self.authorized_headers,
         )
-        if r.status_code == 200:
-            return [Account(**a) for a in r.json()]
+        if accounts_response.status_code == 200:
+            return [Account(**a) for a in accounts_response.json()]
+        else:
+            raise ValueError(
+                f"{accounts_response.status_code} {accounts_response.text}"
+            )
 
     def sbp_bank_fuzzy_search(self, banks: list, bank: str):
+        """
+        Возвращает название банка из списка, название которого наиболее совпадает с искомым
+
+        :param banks: лист названий банков
+        :param bank: искомое название
+        :return:
+        """
         return process.extractOne(bank, banks)[0]
 
-    async def sbp_send_push(self, request_id):
+    async def sbp_send_push(self, request_id) -> str:
+        """
+        Отправляет пуш-уведомление для подтверждение и ждёт, когда пуш-сервер его получит
+
+        :param request_id: номер заявки
+        :return: код подтверждения
+        """
         data = {"deviceUid": self.device.uid, "pushId": self.device.push}
 
-        r = await self._client.post(
+        send_code_response = await self._client.post(
             f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push",
             json=data,
             headers=await self.authorized_headers,
         )
-        if r.status_code == 201:
-            push_id = r.json()["pushId"]
+        if send_code_response.status_code == 201:
+            push_id = send_code_response.json()["pushId"]
             print("awaiting code")
             otp = await self.wait_code(push_id)
             print("code is", otp)
             return otp
         else:
-            print(r.status_code, r.text)
+            raise ValueError(
+                f"{send_code_response.status_code} {send_code_response.text}"
+            )
 
-    async def sbp_push_verify(self, request_id, code):
-        r = await self._client.put(
+    async def sbp_push_verify(self, request_id, code) -> bool:
+        """
+        Проверяет код подтверждения
+
+        :param request_id: номер заявки
+        :param code: код подтверждения
+        :return: успешно ли
+        """
+        verify_response = await self._client.put(
             f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push",
             headers=await self.authorized_headers,
             json={"code": code},
         )
-        if r.status_code == 204:
+        if verify_response.status_code == 204:
             return True
         return False
 
     async def sbp(self, phone, bank, amount, comment=None):
+        """
+        Единый метод для автоматического проведения всего перевода
+
+        :param phone: номер телефона получателя
+        :param bank: название банка получателя, можно в произвольной форме, типа "Тинька" или "Райф"
+        :param amount: сумма перевода в рублях
+        :param comment: комментарий к переводу
+        :return: успешно ли
+        """
         cba = (await self.sbp_settings()).cba
         await self.sbp_prepare()
         banks = await self.sbp_banks(phone=phone, cba=cba)
@@ -589,7 +662,7 @@ class Raiffather:
                     await self.sbp_commission(
                         bank=bank.id, phone=phone, amount=float(amount), cba=cba
                     )
-                )["commission"]
+                ).commission
             )
             init = await self.sbp_init(float(amount), bank.id, phone, comment, cba)
             print("Verifying...")
@@ -598,9 +671,18 @@ class Raiffather:
             success = await self.sbp_push_verify(init.request_id, code)
             return success
 
-    async def transactions(self, size: int = 25, page: int = 0, desc: bool = True):
+    async def transactions(self, size: int = 25, page: int = 0, desc: bool = True) -> Transactions:
+        """
+        Получить транзакции, можно только последние три месяца пока что это ограничения со стороны Райфа
+
+        :param size: всегда 25, лучше не менять, райф не умеет с этим работать, хотя зачем-то заявляет
+        :param page: страница. После какой-то будет игнорироваться
+        :param desc: Не работает, но поле райф предоставил
+        :return: Transactions
+        """
         r = await self._client.get(
-            f"https://amobile.raiffeisen.ru/rths/history/v1/transactions?size={size}&sort=date&page={page}&order={'desc' if desc else 'asc'}",
+            f"https://amobile.raiffeisen.ru/rths/history/v1/transactions?"
+            f"size={size}&sort=date&page={page}&order={'desc' if desc else 'asc'}",
             headers=await self.authorized_headers,
             timeout=20,
         )
@@ -608,6 +690,14 @@ class Raiffather:
             return Transactions(**r.json())
 
     async def global_history_generator(self) -> AsyncGenerator[Transaction, None]:
+        """
+        Генератор для итерации страниц из истории операций, но дальше трёх страниц уйти получить не получится
+        Но оно само остановится, когда увидит, что пошло по старой. Может быть полезно, да. И удобно. Благодарите.
+
+        Можно ещё звезду на гитхабе поставить https://github.com/WhiteApfel/raiffather
+
+        :return:
+        """
         first_transaction: Transaction = None
         page = 0
         while True:
