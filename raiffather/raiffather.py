@@ -676,14 +676,16 @@ class Raiffather:
         :param desc: Не работает, но поле райф предоставил
         :return: Transactions
         """
-        r = await self._client.get(
+        transactions_response = await self._client.get(
             f"https://amobile.raiffeisen.ru/rths/history/v1/transactions?"
             f"size={size}&sort=date&page={page}&order={'desc' if desc else 'asc'}",
             headers=await self.authorized_headers,
             timeout=20,
         )
-        if r.status_code == 200:
-            return Transactions(**r.json())
+        if transactions_response.status_code == 200:
+            return Transactions(**transactions_response.json())
+        else:
+            raise ValueError(f"{transactions_response.status_code} {transactions_response.text}")
 
     async def global_history_generator(self) -> AsyncGenerator[Transaction, None]:
         """
