@@ -385,8 +385,6 @@ class Raiffather:
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
-            with open("fjsadhsg.json", "w+") as f:
-                f.write(r.text)
             parsed_r = Products(**r.json())
             return parsed_r
         elif r.status_code == 403:
