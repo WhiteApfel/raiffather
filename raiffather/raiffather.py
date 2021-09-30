@@ -26,6 +26,7 @@ from tenacity import retry, retry_if_result, stop_after_attempt
 from raiffather.exceptions.sbp import SBPRecipientNotFound
 from raiffather.models.auth import OauthResponse, ResponseOwner
 from raiffather.models.balance import Balance
+from raiffather.models.c2c import C2cInit, E3DSOTPData
 from raiffather.models.device_info import DeviceInfo
 from raiffather.models.products import Account, Products
 from raiffather.models.sbp import SbpBank, SbpInit, SbpPam, SbpSettings, SbpCommission
@@ -110,9 +111,7 @@ class Raiffather:
                     full_message = base64.b64decode(
                         message["fullMessage"].encode()
                     ).decode()
-                    push_id = re.search("<rcasId>([0-9]{10})</rcasId>", full_message)[
-                        1
-                    ]
+                    push_id = re.search("<rcasId>([0-9]{10})</rcasId>", full_message)[1]
                     otp = re.search("<otp>([0-9]{6})</otp>", full_message)[1]
                     self.__otps[push_id] = otp
                 mfms_data = {
@@ -217,7 +216,7 @@ class Raiffather:
         return {
             "Authorization": f"Bearer {await self._access_token}",
             "User-Agent": f"Raiffeisen {self.device.app_version} / {self.device.model} "
-                          f"({self.device.os} {self.device.os_version}) / false",
+            f"({self.device.os} {self.device.os_version}) / false",
             "RC-Device": "android",
         }
 
@@ -393,6 +392,89 @@ class Raiffather:
         else:
             raise ValueError(f"Status: {r.status_code}")
 
+    async def c2c_prepare(self):
+        """
+        Подготавливает к проведению перевода по номеру карты, обязательный пунктик
+        :return: bool
+        """
+        r = await self._client.get(
+            "https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer",
+            headers=await self.authorized_headers,
+        )
+        if r.status_code == 200:
+            return True
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
+
+    async def c2c_fees(self, amount, src=83159519, dst="4111111111111111"):
+        """
+        Рассчитывает комиссию со стороны Райфа для перевода.
+        Другие банки могут взять комиссию за стягивание или пополнение
+        :return: bool
+        """
+        r = await self._client.post(
+            "https://e-commerce.raiffeisen.ru/ws/link/c2c/v1.0/fees",
+            headers=await self.authorized_headers,
+            json={
+                "amount": 1.0,
+                "dst": {"pan": dst},
+                "feeCurrency": 810,
+                "src": {"serno": src},
+                "transferCurrency": 643,
+            },
+        )
+        if r.status_code == 200:
+            return r.json()
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
+
+    async def c2c_init(self):
+        """
+        Инициализирует намерение перевода. ВОзвращает какие-то данные
+        Нужная штука, если хотите сделать перевод, без неё вообще нельзя, гы
+        :return: bool
+        """
+        r = await self._client.post(
+            "https://e-commerce.raiffeisen.ru/ws/link/c2c/v1.0/fees",
+            headers=await self.authorized_headers,
+            json={
+                "amount": {"currency": 643, "sum": 1.0},
+                "dst": {"cardId": 83159519, "type": "cardId"},
+                "commission": {"currency": 810, "sum": 0.0},
+                "src": {"tcpId": 233841, "type": "tcpId"},
+                "salary": False,
+            },
+        )
+        if r.status_code == 200:
+            return C2cInit(**r.json())
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
+
+    async def c2c_e3dsotp(self, request_id):
+        data = {"deviceUid": self.device.uid, "pushId": self.device.push}
+
+        e3dsotp_response = await self._client.post(
+            f"https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer/{request_id}/E3DSOTP",
+            json="data",
+            headers=await self.authorized_headers,
+        )
+        if e3dsotp_response.status_code == 200:
+            return E3DSOTPData(**e3dsotp_response.json())
+        else:
+            raise ValueError(f"{e3dsotp_response.status_code} {e3dsotp_response.text}")
+
+    async def c2c_e3ds_pareq(self):
+        data = {
+            "MD": "",
+            "TermUrl": "https://imobile.raiffeisen.ru/3ds/1400474370",
+            "PaReq": "iofdjgjfdidfg",
+        }
+        r = await self._client.post(
+            "https://ds.mirconnect.ru/vbv2/pareq",
+            headers=await self.authorized_headers,
+            data=data,
+        )
+
     async def c2c(self, amount: Union[float, int]):
         """
         Общий метод для полноценного проведения операции по всем этапам
@@ -490,7 +572,7 @@ class Raiffather:
             raise ValueError(f"{r.status_code}: {r.text}")
 
     async def sbp_commission(
-            self, bank, phone, amount, cba: str = None
+        self, bank, phone, amount, cba: str = None
     ) -> SbpCommission:
         """
         Расчёт комиссии для перевода по СБП
@@ -520,7 +602,7 @@ class Raiffather:
             )
 
     async def sbp_init(
-            self, amount, bank, phone, message=None, cba: str = None
+        self, amount, bank, phone, message=None, cba: str = None
     ) -> SbpInit:
         """
         Ещё один этап для проведения перевода по СБП
@@ -665,7 +747,9 @@ class Raiffather:
             success = await self.sbp_push_verify(init.request_id, code)
             return success
 
-    async def transactions(self, size: int = 25, page: int = 0, desc: bool = True) -> Transactions:
+    async def transactions(
+        self, size: int = 25, page: int = 0, desc: bool = True
+    ) -> Transactions:
         """
         Получить транзакции, можно только последние три месяца пока что это ограничения со стороны Райфа
 
@@ -683,7 +767,9 @@ class Raiffather:
         if transactions_response.status_code == 200:
             return Transactions(**transactions_response.json())
         else:
-            raise ValueError(f"{transactions_response.status_code} {transactions_response.text}")
+            raise ValueError(
+                f"{transactions_response.status_code} {transactions_response.text}"
+            )
 
     async def global_history_generator(self) -> AsyncGenerator[Transaction, None]:
         """
