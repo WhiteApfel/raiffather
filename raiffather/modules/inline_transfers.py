@@ -73,3 +73,16 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
+    async def internal_transfer_verify(self, request_id):
+        r = await self._client.put(
+            f"https://amobile.raiffeisen.ru/rest/1/transfer/internal/{request_id}/stub",
+            headers=await self.authorized_headers
+        )
+        if r.status_code == 204:
+            logger.debug(
+                f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
+            )
+            return True
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
+
