@@ -10,16 +10,15 @@ class RaiffatherSettings(RaiffatherBase):
         :param cba: На какой счёт получать. Обязательно указать, даже если отключаете приём переводов
         :return: успешность выполнения
         """
-        data = {
-            "allowTransfers": allow,
-            "cba": cba
-        }
+        data = {"allowTransfers": allow, "cba": cba}
         settings_response = await self._client.post(
             "https://amobile.raiffeisen.ru/rest/1/sbp/settings",
             headers=await self.authorized_headers,
-            json=data
+            json=data,
         )
         if settings_response.status_code == 200:
             return True
         else:
-            raise ValueError(f"{settings_response.status_code} {settings_response.text}")
+            raise ValueError(
+                f"{settings_response.status_code} {settings_response.text}"
+            )
