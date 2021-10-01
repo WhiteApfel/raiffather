@@ -1,5 +1,6 @@
-from raiffather.modules import *
 from loguru import logger
+
+from raiffather.modules import *
 
 logger.disable("raiffather")
 
