@@ -28,14 +28,14 @@ class C2cInit(BaseModel):
     operation_type: int = Field(..., alias="operationType")
     document: str
     methods: list[C2cInitMethod]
-    details: str
-    template_allowed: bool = Field(..., alias="templateAllowed")
-    template_signed: bool = Field(..., alias="templateSigned")
+    details: dict
+    templates_allowed: bool = Field(..., alias="templatesAllowed")
+    templates_signed: bool = Field(..., alias="templatesSigned")
 
 
 class E3DSOTPData(BaseModel):
     wait: int = Field(..., alias="await")
-    acs_url: str = Field(..., alias="acs_url")
+    acs_url: str = Field(..., alias="acsUrl")
     pareq: str
 
 

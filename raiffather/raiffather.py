@@ -138,11 +138,14 @@ class Raiffather:
             push_listener = await self.pullkin.listen_coroutine()
         except asyncio.exceptions.CancelledError:
             return
-
+        except ConnectionResetError:
+            return
         try:
             while True:
                 await push_listener.asend(None)
         except asyncio.exceptions.CancelledError:
+            ...
+        except ConnectionResetError:
             ...
         except Exception:
             print(traceback.format_exc())
@@ -397,11 +400,13 @@ class Raiffather:
         Подготавливает к проведению перевода по номеру карты, обязательный пунктик
         :return: bool
         """
+        logger.debug(f"C2C prepare...")
         r = await self._client.get(
             "https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
+            logger.debug(f"C2C prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}")
             return True
         else:
             raise ValueError(f"{r.status_code} {r.text}")
@@ -411,11 +416,14 @@ class Raiffather:
         Подготавливает к проведению перевода по номеру карты, обязательный пунктик
         :return: bool
         """
+        logger.debug(f"C2C retrieve initial data...")
         r = await self._client.get(
             "https://e-commerce.raiffeisen.ru/c2c/v2.0/retrieveInitialData",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
+            logger.debug(f"C2C retrieved initial data successfully. {r.request.method}: {r.url} -> "
+                         f"{r.status_code}: {r.text}")
             return C2cRetrieve(**r.json())
         else:
             raise ValueError(f"{r.status_code} {r.text}")
@@ -426,6 +434,7 @@ class Raiffather:
         Другие банки могут взять комиссию за стягивание или пополнение
         :return: bool
         """
+        logger.debug("C2C getting fees...")
         r = await self._client.post(
             "https://e-commerce.raiffeisen.ru/ws/link/c2c/v1.0/fees",
             headers=await self.authorized_headers,
@@ -438,6 +447,8 @@ class Raiffather:
             },
         )
         if r.status_code == 200:
+            logger.debug(f"C2C got fees successfully. {r.request.method}: {r.url} -> "
+                         f"{r.status_code}: {r.text}")
             return r.json()
         else:
             raise ValueError(f"{r.status_code} {r.text}")
@@ -448,52 +459,78 @@ class Raiffather:
         Нужная штука, если хотите сделать перевод, без неё вообще нельзя, гы
         :return: bool
         """
+        logger.debug("C2C initialization...")
         r = await self._client.post(
-            "https://e-commerce.raiffeisen.ru/ws/link/c2c/v1.0/fees",
+            "https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer",
             headers=await self.authorized_headers,
             json={
                 "amount": {"currency": 643, "sum": amount},
-                "dst": {"cardId": 83159519, "type": "cardId"},
                 "commission": {"currency": 810, "sum": 0.0},
-                "src": {"tcpId": 233841, "type": "tcpId"},
+                "dst": {"cardId": 83159519, "type": "cardId"},
+                "src": {"tpcId": 233841, "type": "tpcId"},
                 "salary": False,
             },
+            # json='{"amount":{"currency":643,"sum":1.0},"commission":{"currency":810,"sum":0.0},"dst":{"cardId":83159519,"type":"cardId"},"salary":false,"src":{"tpcId":233841,"type":"tpcId"}}'
         )
         if r.status_code == 200:
+            logger.debug(f"C2C initialized successfully. {r.request.method}: {r.url} -> "
+                         f"{r.status_code}: {r.text}")
             return C2cInit(**r.json())
         else:
+            logger.critical(f"C2C initialization failed. {r.request.method}: {r.url} -> "
+                            f"{r.status_code}: {r.text}\nRequest headers: {r.request.headers}\n"
+                            f"Request content:\n{r.request.content}")
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def c2c_e3dsotp(self, request_id):
+    async def c2c_e3ds_start(self, request_id):
         """
         Получение данных для перенаправления на 3DS
 
         :param request_id: номер заявки на перевод, получается в self.c2c_init()
         :return:
         """
+        logger.debug("C2C getting E3DS OTP data")
+        headers = await self.authorized_headers
+        headers.update({'Content-Type': 'application/json'})
         e3dsotp_response = await self._client.post(
             f"https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer/{request_id}/E3DSOTP",
-            json="",
-            headers=await self.authorized_headers,
+            headers=headers
         )
         if e3dsotp_response.status_code == 200:
+            logger.debug(f"C2C got E3DS OTP data successfully. {e3dsotp_response.request.method}: "
+                         f"{e3dsotp_response.url} -> "
+                         f"{e3dsotp_response.status_code}: {e3dsotp_response.text}")
             return E3DSOTPData(**e3dsotp_response.json())
         else:
             raise ValueError(f"{e3dsotp_response.status_code} {e3dsotp_response.text}")
 
-    async def c2c_e3ds_pareq(self, pareq):
+    async def c2c_e3ds_pareq(self, acs_url, pareq):
         data = {
             "MD": "",
             "TermUrl": "https://imobile.raiffeisen.ru/3ds/1400474370",
             "PaReq": pareq,
         }
         r = await self._client.post(
-            "https://ds.mirconnect.ru/vbv2/pareq",
+            acs_url,
             headers=await self.authorized_headers,
             data=data,
         )
         if r.status_code == 200:
             return r.text
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
+
+    async def c2c_e3ds_verify(self, request_id, pares):
+        data = {
+            "pares": pares,
+        }
+        r = await self._client.put(
+            f"https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer/{request_id}/E3DSOTP",
+            headers=await self.authorized_headers,
+            json=data,
+        )
+        if r.status_code == 200:
+            return True
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
