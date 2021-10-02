@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from pydantic.dataclasses import Field
 
 from raiffather.models.balance import Currency
@@ -57,6 +57,34 @@ class Card(BaseModel):
     favorite: bool
 
 
+class Accounts(BaseModel):
+    accounts: list[Account]
+
+    def __getitem__(self, item):
+        if len(str(item)) == 20:  # cba, номер счёта
+            for a in self.accounts:
+                if a.cba == str(item):
+                    return item
+        elif len(str(item)) == 8:  # id, идентификатор счёта в райфе
+            for a in self.accounts:
+                if a.id == int(item):
+                    return item
+        elif len(str(item)) == 10:  # rma, хз что, но тоже, вроде, уникальное
+            for a in self.accounts:
+                if a.rma == str(item):
+                    return item
+        elif type(item) is str:  # name, название счёта
+            for a in self.accounts:
+                if a.name == str(item):
+                    return item
+        else:
+            raise KeyError(f"Not found {item} in accounts ({len(self.accounts)})")
+
+
 class Products(BaseModel):
     cards: list[Card] = Field(..., alias="card")
-    accounts: list[Account] = Field(..., alias="account")
+    accounts: Accounts = Field(..., alias="account")
+
+    @validator('accounts', pre=True)
+    def validators_accounts_pre(cls, v):
+        return Accounts(accounts=v)
