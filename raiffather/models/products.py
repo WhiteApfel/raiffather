@@ -122,6 +122,10 @@ class Cards(BaseModel):
                 f"Found more then one card with item {item} in cards ({len(self.cards)})"
             )
 
+    @property
+    def visa(self):
+        return Cards(cards=[c for c in self.cards if c.payment_system == "Visa"])
+
 
 class Accounts(BaseModel):
     accounts: list[Account]
