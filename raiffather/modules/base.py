@@ -383,6 +383,7 @@ class RaiffatherBase:
         )
         if r.status_code == 200:
             parsed_r = Products(**r.json())
+            self._products = parsed_r
             return parsed_r
         elif r.status_code == 403:
             await self._auth()
