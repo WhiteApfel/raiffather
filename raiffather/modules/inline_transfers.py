@@ -1,4 +1,4 @@
-from raiffather.models.internal_transfers import InternalTransactionInit
+from raiffather.models.internal_transfers import InternalTransactionInit, InternalTransactionExchangeRate
 from raiffather.models.products import Account
 from raiffather.modules.base import RaiffatherBase
 from loguru import logger
@@ -125,4 +125,21 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         if verify_response.status_code == 204:
             return True
         return False
+
+    async def internal_transfer_exchange_rate(self, amount=1.0, src='RUR', dst='USD', in_src_currency=False, scope=4):
+        params = {
+            "currencySource": src,
+            "currencyDest": dst,
+            "amount": float(amount),
+            "amount_in_src_currency": in_src_currency,
+            "scope": scope
+        }
+        rate_response = await self._client.get(f"https://amobile.raiffeisen.ru/rest/exchange/rate", params=params)
+        if rate_response.status_code == 200:
+            return InternalTransactionExchangeRate(**rate_response.json())
+        else:
+            raise ValueError(
+                f"{rate_response.status_code} {rate_response.text}"
+            )
+
 
