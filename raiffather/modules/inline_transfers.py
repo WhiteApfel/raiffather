@@ -59,8 +59,8 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             "amount": float(amount),
             "amountInSrcCurrency": source_currency,
             "discountRateTypeId": 1,
-            "dstAccountId": dst.i,
-            "srcAccountId": src,
+            "dstAccountId": dst.id,
+            "srcAccountId": src.id,
             "template": False,
         }
         r = await self._client.post(
