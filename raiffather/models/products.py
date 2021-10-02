@@ -88,6 +88,13 @@ class Cards(BaseModel):
                         found.append(a)
                 if len(found) == 1:
                     return found[0]
+        elif len(str(item)) == 4:
+            found = []
+            for a in self.cards:
+                if a.pan[-4:] == str(item):
+                    found.append(a)
+            if len(found) == 1:
+                return found[0]
         elif type(item) is str:  # name, название счёта
             found = []
             for a in self.cards:
