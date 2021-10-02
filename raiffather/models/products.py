@@ -29,6 +29,17 @@ class Account(BaseModel):
     gpc: Optional[str]
     rates: Optional[list]
 
+    def __lt__(self, other):
+        if type(other) is Account:
+            return self.balance < other.balance
+        elif type(other) in [int, float]:
+            return self.balance < other
+        else:
+            raise ValueError(
+                f"Objects are compared by balance. "
+                 f"Cannot be compared to anything other than a int, float or other Account instance"
+            )
+
 
 class Card(BaseModel):
     id: int
@@ -103,6 +114,26 @@ class Accounts(BaseModel):
 
     def __iter__(self):
         return self.accounts
+
+    @property
+    def business(self):
+        return Accounts(accounts=[a for a in self.accounts if a.type_id == "BUSINESS"])
+
+    @property
+    def current(self):
+        return Accounts(accounts=[a for a in self.accounts if a.type_id == "CURRENT"])
+
+    @property
+    def rubles(self):
+        return Accounts(accounts=[a for a in self.accounts if a.currency.id == "RUR"])
+
+    @property
+    def dollars(self):
+        return Accounts(accounts=[a for a in self.accounts if a.currency.id == "USD"])
+
+    @property
+    def euros(self):
+        return Accounts(accounts=[a for a in self.accounts if a.currency.id == "EUR"])
 
 
 class Products(BaseModel):
