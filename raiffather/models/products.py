@@ -126,6 +126,10 @@ class Cards(BaseModel):
     def visa(self):
         return Cards(cards=[c for c in self.cards if c.payment_system == "Visa"])
 
+    @property
+    def mastercard(self):
+        return Cards(cards=[c for c in self.cards if c.payment_system == "MasterCard"])
+
 
 class Accounts(BaseModel):
     accounts: list[Account]
