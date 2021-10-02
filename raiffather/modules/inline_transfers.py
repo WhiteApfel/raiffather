@@ -54,12 +54,12 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def internal_transfer_init(self, amount, dst, src, source_currency=True):
+    async def internal_transfer_init(self, amount, src, dst, source_currency=True):
         data = {
             "amount": float(amount),
             "amountInSrcCurrency": source_currency,
             "discountRateTypeId": 1,
-            "dstAccountId": dst,
+            "dstAccountId": dst.i,
             "srcAccountId": src,
             "template": False,
         }
