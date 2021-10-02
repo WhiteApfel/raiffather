@@ -67,6 +67,17 @@ class Card(BaseModel):
     settings: dict
     favorite: bool
 
+    def __lt__(self, other):
+        if type(other) is Card:
+            return self.balance < other.balance
+        elif type(other) in [int, float]:
+            return self.balance < other
+        else:
+            raise ValueError(
+                f"Objects are compared by balance. "
+                f"Cannot be compared to anything other than a int, float or other Card instance"
+            )
+
 
 class Cards(BaseModel):
     cards: list[Card]
