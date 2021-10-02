@@ -152,6 +152,7 @@ class RaiffatherBase:
                 return self.__otps.pop(push_id)
             x += 1
             await asyncio.sleep(2)
+        raise KeyError(f"Код для #{push_id} не был получен в течение двух минут")
 
     @property
     def _client(self) -> AsyncClient:
