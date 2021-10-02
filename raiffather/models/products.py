@@ -64,23 +64,45 @@ class Accounts(BaseModel):
         if type(item) is int and item < len(self.accounts):
             return self.accounts[item]
         elif len(str(item)) == 20:  # cba, номер счёта
+            found = []
             for a in self.accounts:
                 if a.cba == str(item):
-                    return item
+                    found.append(a)
+            if len(found) == 1:
+                return found[0]
         elif len(str(item)) == 8:  # id, идентификатор счёта в райфе
+            found = []
             for a in self.accounts:
                 if a.id == int(item):
-                    return item
+                    found.append(a)
+            if len(found) == 1:
+                return found[0]
         elif len(str(item)) == 10:  # rma, хз что, но тоже, вроде, уникальное
+            found = []
             for a in self.accounts:
                 if a.rma == str(item):
-                    return item
+                    found.append(a)
+            if len(found) == 1:
+                return found[0]
         elif type(item) is str:  # name, название счёта
+            found = []
             for a in self.accounts:
                 if a.name == str(item):
-                    return item
+                    found.append(a)
+            if len(found) == 1:
+                return found[0]
         else:
+            found = []
+        if len(found) == 0:
             raise KeyError(f"Not found {item} in accounts ({len(self.accounts)})")
+        else:
+            raise KeyError(f"Found more then one account with item {item} in accounts ({len(self.accounts)})")
+
+    def __len__(self):
+        return len(self.accounts)
+
+    def __iter__(self):
+        return self.accounts
 
 
 class Products(BaseModel):
