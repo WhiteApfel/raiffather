@@ -71,6 +71,39 @@ class Card(BaseModel):
 class Cards(BaseModel):
     cards: list[Card]
 
+    def __getitem__(self, item):
+        if type(item) is int and item < len(self.cards):
+            return self.cards[item]
+        elif len(str(item)) == 8:  # id, идентификатор карты в райфе
+            found = []
+            for a in self.cards:
+                if a.id == int(item):
+                    found.append(a)
+            if len(found) == 1:
+                return found[0]
+            elif len(found) == 0:  # icdb_id, хз что, но тоже, вроде, уникальное
+                found = []
+                for a in self.cards:
+                    if a.icdb_id == str(item):
+                        found.append(a)
+                if len(found) == 1:
+                    return found[0]
+        elif type(item) is str:  # name, название счёта
+            found = []
+            for a in self.cards:
+                if a.name == str(item):
+                    found.append(a)
+            if len(found) == 1:
+                return found[0]
+        else:
+            found = []
+        if len(found) == 0:
+            raise KeyError(f"Not found {item} in accounts ({len(self.cards)})")
+        else:
+            raise KeyError(
+                f"Found more then one account with item {item} in accounts ({len(self.cards)})"
+            )
+
 
 class Accounts(BaseModel):
     accounts: list[Account]
