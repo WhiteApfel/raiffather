@@ -61,7 +61,9 @@ class Accounts(BaseModel):
     accounts: list[Account]
 
     def __getitem__(self, item):
-        if len(str(item)) == 20:  # cba, номер счёта
+        if type(item) is int and item < len(self.accounts):
+            return self.accounts[item]
+        elif len(str(item)) == 20:  # cba, номер счёта
             for a in self.accounts:
                 if a.cba == str(item):
                     return item
