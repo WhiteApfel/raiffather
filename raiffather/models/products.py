@@ -116,10 +116,10 @@ class Cards(BaseModel):
         else:
             found = []
         if len(found) == 0:
-            raise KeyError(f"Not found {item} in accounts ({len(self.cards)})")
+            raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
         else:
             raise KeyError(
-                f"Found more then one account with item {item} in accounts ({len(self.cards)})"
+                f"Found more then one card with item {item} in cards ({len(self.cards)})"
             )
 
 
