@@ -115,7 +115,8 @@ class Accounts(BaseModel):
         return len(self.accounts)
 
     def __iter__(self):
-        return self.accounts
+        for a in self.accounts:
+            yield a
 
     @property
     def business(self):
