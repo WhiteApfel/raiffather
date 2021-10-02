@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class InternalTransactionMethod(BaseModel):
-    method: Literal['PUSHOTP', 'SMSOTP', 'STUBOTP']
+    method: Literal["PUSHOTP", "SMSOTP", "STUBOTP"]
 
 
 class InternalTransactionDetail(BaseModel):
@@ -25,7 +25,7 @@ class InternalTransactionInit(BaseModel):
 
     @property
     def stub_allowed(self):
-        return InternalTransactionMethod(method='STUBOTP') in self.methods
+        return InternalTransactionMethod(method="STUBOTP") in self.methods
 
 
 class InternalTransactionExchangeRate(BaseModel):

@@ -37,7 +37,7 @@ class Account(BaseModel):
         else:
             raise ValueError(
                 f"Objects are compared by balance. "
-                 f"Cannot be compared to anything other than a int, float or other Account instance"
+                f"Cannot be compared to anything other than a int, float or other Account instance"
             )
 
 
@@ -107,7 +107,9 @@ class Accounts(BaseModel):
         if len(found) == 0:
             raise KeyError(f"Not found {item} in accounts ({len(self.accounts)})")
         else:
-            raise KeyError(f"Found more then one account with item {item} in accounts ({len(self.accounts)})")
+            raise KeyError(
+                f"Found more then one account with item {item} in accounts ({len(self.accounts)})"
+            )
 
     def __len__(self):
         return len(self.accounts)
@@ -140,6 +142,6 @@ class Products(BaseModel):
     cards: list[Card] = Field(..., alias="card")
     accounts: Accounts = Field(..., alias="account")
 
-    @validator('accounts', pre=True)
+    @validator("accounts", pre=True)
     def validators_accounts_pre(cls, v):
         return Accounts(accounts=v)

@@ -6,6 +6,10 @@ logger.disable("raiffather")
 
 
 class Raiffather(
-    RaiffatherC2C, RaiffatherSBP, RaiffatherTransactions, RaiffatherSettings, RaiffatherInlineTransfers
+    RaiffatherC2C,
+    RaiffatherSBP,
+    RaiffatherTransactions,
+    RaiffatherSettings,
+    RaiffatherInlineTransfers,
 ):
     ...
