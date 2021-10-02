@@ -21,3 +21,7 @@ class InternalTransactionInit(BaseModel):
     detail: InternalTransactionDetail
     document: str
     type_id: int
+
+    @property
+    def stub_allowed(self):
+        return InternalTransactionMethod(method='STUBOTP') in self.methods

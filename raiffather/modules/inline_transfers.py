@@ -73,7 +73,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def internal_transfer_verify(self, request_id):
+    async def internal_transfer_verify_stub(self, request_id):
         r = await self._client.put(
             f"https://amobile.raiffeisen.ru/rest/1/transfer/internal/{request_id}/stub",
             headers=await self.authorized_headers
@@ -85,4 +85,44 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             return True
         else:
             raise ValueError(f"{r.status_code} {r.text}")
+
+    async def internal_transfer_send_push(self, request_id) -> str:
+        """
+        Отправляет пуш-уведомление для подтверждение и ждёт, когда пуш-сервер его получит
+
+        :param request_id: номер заявки
+        :return: код подтверждения
+        """
+        data = {"deviceUid": self.device.uid, "pushId": self.device.push}
+
+        send_code_response = await self._client.post(
+            f"https://amobile.raiffeisen.ru/rest/1/transfer/internal/{request_id}/push",
+            json=data,
+            headers=await self.authorized_headers,
+        )
+        if send_code_response.status_code == 201:
+            push_id = send_code_response.json()["pushId"]
+            otp = await self.wait_code(push_id)
+            return otp
+        else:
+            raise ValueError(
+                f"{send_code_response.status_code} {send_code_response.text}"
+            )
+
+    async def internal_transfer_push_verify(self, request_id, code) -> bool:
+        """
+        Проверяет код подтверждения
+
+        :param request_id: номер заявки
+        :param code: код подтверждения
+        :return: успешно ли
+        """
+        verify_response = await self._client.put(
+            f"https://amobile.raiffeisen.ru/rest/1/transfer/internal/{request_id}/push",
+            headers=await self.authorized_headers,
+            json={"code": code},
+        )
+        if verify_response.status_code == 204:
+            return True
+        return False
 
