@@ -68,6 +68,10 @@ class Card(BaseModel):
     favorite: bool
 
 
+class Cards(BaseModel):
+    cards: list[Card]
+
+
 class Accounts(BaseModel):
     accounts: list[Account]
 
@@ -140,9 +144,13 @@ class Accounts(BaseModel):
 
 
 class Products(BaseModel):
-    cards: list[Card] = Field(..., alias="card")
+    cards: Cards = Field(..., alias="card")
     accounts: Accounts = Field(..., alias="account")
 
     @validator("accounts", pre=True)
     def validators_accounts_pre(cls, v):
         return Accounts(accounts=v)
+
+    @validator("cards", pre=True)
+    def validators_cards_pre(cls, v):
+        return Cards(cards=v)
