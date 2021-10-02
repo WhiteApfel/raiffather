@@ -21,7 +21,7 @@ class InternalTransactionInit(BaseModel):
     methods: list[InternalTransactionMethod]
     detail: InternalTransactionDetail
     document: str
-    type_id: int
+    type_id: int = Field(..., alias="typeId")
 
     @property
     def stub_allowed(self):

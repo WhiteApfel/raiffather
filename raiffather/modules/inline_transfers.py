@@ -51,10 +51,10 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def internal_transfer_init(self, amount, dst, src):
+    async def internal_transfer_init(self, amount, dst, src, source_currency=True):
         data = {
             "amount": float(amount),
-            "amountInSrcCurrency": True,
+            "amountInSrcCurrency": source_currency,
             "discountRateTypeId": 1,
             "dstAccountId": dst,
             "srcAccountId": src,
@@ -69,14 +69,19 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             logger.debug(
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
-            return InternalTransactionInit(**r.json())
+            try:
+                return InternalTransactionInit(**r.json())
+            except Exception as e:
+                print(e)
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
     async def internal_transfer_verify_stub(self, request_id):
+        headers = await self.authorized_headers
+        headers.update({"Content-Type": "application/json"})
         r = await self._client.put(
             f"https://amobile.raiffeisen.ru/rest/1/transfer/internal/{request_id}/stub",
-            headers=await self.authorized_headers
+            headers=headers
         )
         if r.status_code == 204:
             logger.debug(
