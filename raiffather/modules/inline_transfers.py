@@ -1,8 +1,8 @@
 from typing import Union
 
 from raiffather.models.internal_transfers import (
-    InternalTransactionInit,
-    InternalTransactionExchangeRate,
+    InternalTransferInit,
+    InternalTransferExchangeRate,
 )
 from raiffather.models.products import Account, Accounts
 from raiffather.modules.base import RaiffatherBase
@@ -79,7 +79,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
             try:
-                return InternalTransactionInit(**r.json())
+                return InternalTransferInit(**r.json())
             except Exception as e:
                 print(e)
         else:
@@ -154,6 +154,6 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             f"https://amobile.raiffeisen.ru/rest/exchange/rate", params=params
         )
         if rate_response.status_code == 200:
-            return InternalTransactionExchangeRate(**rate_response.json())
+            return InternalTransferExchangeRate(**rate_response.json())
         else:
             raise ValueError(f"{rate_response.status_code} {rate_response.text}")

@@ -4,11 +4,11 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-class InternalTransactionMethod(BaseModel):
+class InternalTransferMethod(BaseModel):
     method: Literal["PUSHOTP", "SMSOTP", "STUBOTP"]
 
 
-class InternalTransactionDetail(BaseModel):
+class InternalTransferDetail(BaseModel):
     src_cba: int = Field(..., alias="srcCba")
     dst_cba: int = Field(..., alias="dstCba")
     amount: float
@@ -16,19 +16,19 @@ class InternalTransactionDetail(BaseModel):
     client: str
 
 
-class InternalTransactionInit(BaseModel):
+class InternalTransferInit(BaseModel):
     request_id: int = Field(..., alias="requestId")
-    methods: list[InternalTransactionMethod]
-    detail: InternalTransactionDetail
+    methods: list[InternalTransferMethod]
+    detail: InternalTransferDetail
     document: str
     type_id: int = Field(..., alias="typeId")
 
     @property
     def stub_allowed(self):
-        return InternalTransactionMethod(method="STUBOTP") in self.methods
+        return InternalTransferMethod(method="STUBOTP") in self.methods
 
 
-class InternalTransactionExchangeRate(BaseModel):
+class InternalTransferExchangeRate(BaseModel):
     currency_source: str = Field(..., alias="currencySource")
     currency_dest: str = Field(..., alias="currencyDest")
     date: datetime
