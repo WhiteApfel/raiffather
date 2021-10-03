@@ -18,7 +18,7 @@ class Account(BaseModel):
     type_id: str = Field(..., alias="typeId")
     status: str
     status_id: str = Field(..., alias="statusId")
-    balance: float
+    balance: Optional[float]
     hold: Optional[float]
     open: date
     credit_block: Optional[bool] = Field(None, alias="creditBlock")
@@ -44,6 +44,7 @@ class Account(BaseModel):
 class Card(BaseModel):
     id: int
     procuration_credentials: dict = Field(..., alias="procurationCredentials")
+    account: Optional[Account]
     alien: bool
     icdb_id: int = Field(..., alias="icdbId")
     main: str
