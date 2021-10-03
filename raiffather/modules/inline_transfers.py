@@ -1,3 +1,5 @@
+from typing import Union
+
 from raiffather.models.internal_transfers import (
     InternalTransactionInit,
     InternalTransactionExchangeRate,
@@ -54,7 +56,11 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def internal_transfer_init(self, amount, src, dst, source_currency=True):
+    async def internal_transfer_init(self, amount: Union[float, int], src: Union[str, int, Account], dst: Union[str, int, Account], source_currency=True):
+        if type(src) in [int, str]:
+            src = self.products.accounts[src]
+        if type(dst) in [int, str]:
+            dst = self.products.accounts[dst]
         data = {
             "amount": float(amount),
             "amountInSrcCurrency": source_currency,
