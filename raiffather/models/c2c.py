@@ -71,7 +71,7 @@ class C2cCards(BaseModel):
     def __getitem__(self, item):
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
-        elif len(str(item)) == 6:
+        elif len(str(item)) == 8:
             found = []
             for c in self.cards:
                 if c.card.id == int(item):
