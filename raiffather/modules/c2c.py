@@ -2,7 +2,7 @@ from typing import Union
 
 from loguru import logger
 
-from raiffather.models.c2c import C2cInit, E3DSOTPData, C2cRetrieve
+from raiffather.models.c2c import C2cInit, E3DSOTPData, C2cRetrieve, C2cTpcOne, C2cCard
 from raiffather.modules.base import RaiffatherBase
 
 logger.disable("raiffather")
@@ -49,21 +49,31 @@ class RaiffatherC2C(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def c2c_fees(self, amount, dst=83159519, src="4111111111111111"):
+    async def c2c_fees(self, src: Union[C2cTpcOne, C2cCard, str], dst: Union[C2cTpcOne, C2cCard, str], amount):
         """
         Рассчитывает комиссию со стороны Райфа для перевода.
         Другие банки могут взять комиссию за стягивание или пополнение
         :return: bool
         """
+        dst_data = {
+            "serno": dst.card.id
+        } if type(dst) is C2cCard else {
+            "pan": dst if len(dst) == 16 else "4111111111111111"
+        }
+        src_data = {
+            "serno": src.card.id
+        } if type(dst) is C2cCard else {
+            "pan": src if len(src) == 16 else "4111111111111111"
+        }
         logger.debug("C2C getting fees...")
         r = await self._client.post(
             "https://e-commerce.raiffeisen.ru/ws/link/c2c/v1.0/fees",
             headers=await self.authorized_headers,
             json={
                 "amount": 1.0,
-                "dst": {"serno": dst},
+                "dst": dst_data,
                 "feeCurrency": 643,
-                "src": {"pan": src},
+                "src": src_data,
                 "transferCurrency": 643,
             },
         )
