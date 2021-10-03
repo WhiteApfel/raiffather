@@ -140,7 +140,7 @@ class RaiffatherC2C(RaiffatherBase):
             headers=await self.authorized_headers,
             json={
                 "amount": {"currency": 643, "sum": amount},
-                # "commission": {"currency": 810, "sum": 0.0},
+                "commission": {"currency": 810, "sum": 0.0},
                 "dst": dst_data,
                 "src": src_data,
                 "salary": False,
