@@ -2,7 +2,14 @@ from typing import Union
 
 from loguru import logger
 
-from raiffather.models.c2c import C2cInit, E3DSOTPData, C2cRetrieve, C2cTpcOne, C2cCard
+from raiffather.models.c2c import (
+    C2cInit,
+    E3DSOTPData,
+    C2cRetrieve,
+    C2cTpcOne,
+    C2cCard,
+    C2cNewCard,
+)
 from raiffather.modules.base import RaiffatherBase
 
 logger.disable("raiffather")
@@ -63,12 +70,20 @@ class RaiffatherC2C(RaiffatherBase):
         dst_data = (
             {"serno": dst.card.id}
             if type(dst) is C2cCard
-            else {"pan": dst if len(dst) == 16 else "4111111111111111"}
+            else {
+                "pan": dst
+                if type(dst) is str and len(dst) == 16
+                else "4111111111111111"
+            }
         )
         src_data = (
             {"serno": src.card.id}
-            if type(dst) is C2cCard
-            else {"pan": src if len(src) == 16 else "4111111111111111"}
+            if type(src) is C2cCard
+            else {
+                "pan": src
+                if type(dst) is str and len(src) == 16
+                else "4111111111111111"
+            }
         )
         logger.debug("C2C getting fees...")
         r = await self._client.post(
@@ -91,21 +106,43 @@ class RaiffatherC2C(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def c2c_init(self, amount):
+    async def c2c_init(
+        self,
+        amount,
+        src: Union[C2cTpcOne, C2cCard, C2cNewCard],
+        dst: Union[C2cTpcOne, C2cCard, C2cNewCard],
+    ):
         """
         Инициализирует намерение перевода. Возвращает какие-то данные
         Нужная штука, если хотите сделать перевод, без неё вообще нельзя, гы
         :return: bool
         """
+        class2type = {C2cCard: "cardId", C2cTpcOne: "tpcId", C2cNewCard: "newCard"}
+        src_data = {
+            class2type[type(src)]: src.id
+            if type(src) is C2cTpcOne
+            else src.card.id
+            if type(src) is C2cCard
+            else src.dict(),
+            "type": class2type[type(src)],
+        }
+        dst_data = {
+            class2type[type(dst)]: dst.id
+            if type(dst) is C2cTpcOne
+            else dst.card.id
+            if type(dst) is C2cCard
+            else dst.dict(),
+            "type": class2type[type(dst)],
+        }
         logger.debug("C2C initialization...")
         r = await self._client.post(
             "https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer",
             headers=await self.authorized_headers,
             json={
                 "amount": {"currency": 643, "sum": amount},
-                "commission": {"currency": 810, "sum": 0.0},
-                "dst": {"cardId": 83159519, "type": "cardId"},
-                "src": {"tpcId": 233841, "type": "tpcId"},
+                # "commission": {"currency": 810, "sum": 0.0},
+                "dst": dst_data,
+                "src": src_data,
                 "salary": False,
             },
         )
