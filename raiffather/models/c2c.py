@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from raiffather.models.products import Card
 
@@ -39,7 +39,7 @@ class E3DSOTPData(BaseModel):
     pareq: str
 
 
-class C2cTpc(BaseModel):
+class C2cTpcOne(BaseModel):
     id: int
     name: str
     bin: int
@@ -58,8 +58,112 @@ class C2cCard(BaseModel):
     cash_limit: C2cCashLimit = Field(..., alias="cashLimit")
 
 
+class C2cCards(BaseModel):
+    cards: list[C2cCard]
+
+    def __len__(self):
+        return len(self.cards)
+
+    def __iter__(self):
+        for a in self.cards:
+            yield a
+
+    def __getitem__(self, item):
+        if type(item) is int and item < len(self.cards):
+            return self.cards[item]
+        elif len(str(item)) == 6:
+            found = []
+            for c in self.cards:
+                if c.card.id == int(item):
+                    found.append(c)
+            if len(found) == 1:
+                return found[0]
+        elif len(str(item)) == 4:
+            found = []
+            for c in self.cards:
+                if c.card.pan[-4:] == str(item):
+                    found.append(c)
+            if len(found) == 1:
+                return found[0]
+        elif type(item) is str:
+            found = []
+            for c in self.cards:
+                if c.card.name == str(item):
+                    found.append(c)
+            if len(found) == 1:
+                return found[0]
+        else:
+            found = []
+        if len(found) == 0:
+            raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
+        else:
+            raise KeyError(
+                f"Found more then one card with item {item} in cards ({len(self.cards)})"
+            )
+
+
+class C2cTpc(BaseModel):
+    cards: list[C2cTpcOne]
+
+    def __len__(self):
+        return len(self.cards)
+
+    def __iter__(self):
+        for a in self.cards:
+            yield a
+
+    def __getitem__(self, item):
+        if type(item) is int and item < len(self.cards):
+            return self.cards[item]
+        elif len(str(item)) == 6:
+            found = []
+            for c in self.cards:
+                if c.id == int(item):
+                    found.append(c)
+            if len(found) == 1:
+                return found[0]
+        elif len(str(item)) == 4:
+            found = []
+            for c in self.cards:
+                if c.last_digits == int(item):
+                    found.append(c)
+            if len(found) == 1:
+                return found[0]
+        elif type(item) is str:
+            found = []
+            for c in self.cards:
+                if c.name == str(item):
+                    found.append(c)
+            if len(found) == 1:
+                return found[0]
+        else:
+            found = []
+        if len(found) == 0:
+            raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
+        else:
+            raise KeyError(
+                f"Found more then one card with item {item} in cards ({len(self.cards)})"
+            )
+
+    @property
+    def visa(self):
+        return C2cTpc(cards=[c for c in self.cards if c.payment_system == "Visa"])
+
+    @property
+    def mastercard(self):
+        return C2cTpc(cards=[c for c in self.cards if c.payment_system == "MasterCard"])
+
+
 class C2cRetrieve(BaseModel):
-    cards_ext: list[C2cCard] = Field(..., alias="cardsExt")
-    tpc: list[C2cTpc]
+    cards_ext: C2cCards = Field(..., alias="cardsExt")
+    tpc: C2cTpc
     disabled_bins_for_c2c: list[int] = Field(..., alias="disabledBinsForC2C")
     us_bins: list[int] = Field(..., alias="usBins")
+
+    @validator("cards_ext", pre=True)
+    def validators_cards_ext_pre(cls, v):
+        return C2cCards(cards=v)
+
+    @validator("tpc", pre=True)
+    def validators_tpc_pre(cls, v):
+        return C2cTpc(cards=v)

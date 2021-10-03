@@ -42,7 +42,10 @@ class RaiffatherC2C(RaiffatherBase):
                 f"C2C retrieved initial data successfully. {r.request.method}: {r.url} -> "
                 f"{r.status_code}: {r.text}"
             )
-            return C2cRetrieve(**r.json())
+            try:
+                return C2cRetrieve(**r.json())
+            except Exception as e:
+                print(e)
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
