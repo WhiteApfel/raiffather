@@ -43,13 +43,13 @@ class RaiffatherBase:
         self.__fcm_sender_id: int = 581003993230  # Raiffeisen
         self.__otps: dict = {}
         self.me: Optional[ResponseOwner] = None
-        self._products: Optional[Products] = None
+        self.products: Optional[Products] = None
         self.pullkin = AioPullkin()
         self.__receiving_push: Task = None
 
     async def __aenter__(self):
-        if not self._products:
-            self._products = await self.products()
+        if not self.products:
+            self.products = await self.get_products()
         self.__receiving_push = asyncio.get_event_loop().create_task(
             self._push_server()
         )
@@ -376,14 +376,14 @@ class RaiffatherBase:
         stop=stop_after_attempt(2),
         retry=retry_if_result(lambda x: str(x) == "Unauthorized"),
     )
-    async def products(self) -> Products:
+    async def get_products(self) -> Products:
         r = await self._client.get(
             "https://amobile.raiffeisen.ru/rest/1/product/list",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
             parsed_r = Products(**r.json())
-            self._products = parsed_r
+            self.products = parsed_r
             return parsed_r
         elif r.status_code == 403:
             await self._auth()

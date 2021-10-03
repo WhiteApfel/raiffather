@@ -31,8 +31,8 @@ class RaiffatherSBP(RaiffatherBase):
             raise ValueError(f"{settings_reponse.status_code} {settings_reponse.text}")
 
     async def sbp_banks(self, phone, cba: str = None):
-        if not self._products:
-            self._products = await self.products()
+        if not self.products:
+            self.products = await self.get_products()
         data = {"phone": phone, "srcCba": cba or (await self.sbp_settings()).cba}
         sbp_banks_response = await self._client.post(
             "https://amobile.raiffeisen.ru/rest/1/transfer/contact/bank",
