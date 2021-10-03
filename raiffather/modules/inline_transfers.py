@@ -2,7 +2,7 @@ from raiffather.models.internal_transfers import (
     InternalTransactionInit,
     InternalTransactionExchangeRate,
 )
-from raiffather.models.products import Account
+from raiffather.models.products import Account, Accounts
 from raiffather.modules.base import RaiffatherBase
 from loguru import logger
 
@@ -37,7 +37,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             logger.debug(
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
-            return [Account(**a) for a in r.json()]
+            return Accounts(accounts=r.json())
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
@@ -50,7 +50,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             logger.debug(
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
-            return [Account(**a) for a in r.json()]
+            return Accounts(accounts=r.json())
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
