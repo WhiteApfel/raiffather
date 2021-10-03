@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -167,3 +167,11 @@ class C2cRetrieve(BaseModel):
     @validator("tpc", pre=True)
     def validators_tpc_pre(cls, v):
         return C2cTpc(cards=v)
+
+
+class C2cNewCard(BaseModel):
+    number: int = Field(False, alias="pam")
+    expiry: Optional[str]
+    cvv: Optional[str]
+    name: Optional[str]
+    add_to_list: bool = Field(False, alias="addToList")

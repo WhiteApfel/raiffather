@@ -49,22 +49,27 @@ class RaiffatherC2C(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def c2c_fees(self, src: Union[C2cTpcOne, C2cCard, str], dst: Union[C2cTpcOne, C2cCard, str], amount):
+    async def c2c_fees(
+        self,
+        src: Union[C2cTpcOne, C2cCard, str],
+        dst: Union[C2cTpcOne, C2cCard, str],
+        amount,
+    ):
         """
         Рассчитывает комиссию со стороны Райфа для перевода.
         Другие банки могут взять комиссию за стягивание или пополнение
         :return: bool
         """
-        dst_data = {
-            "serno": dst.card.id
-        } if type(dst) is C2cCard else {
-            "pan": dst if len(dst) == 16 else "4111111111111111"
-        }
-        src_data = {
-            "serno": src.card.id
-        } if type(dst) is C2cCard else {
-            "pan": src if len(src) == 16 else "4111111111111111"
-        }
+        dst_data = (
+            {"serno": dst.card.id}
+            if type(dst) is C2cCard
+            else {"pan": dst if len(dst) == 16 else "4111111111111111"}
+        )
+        src_data = (
+            {"serno": src.card.id}
+            if type(dst) is C2cCard
+            else {"pan": src if len(src) == 16 else "4111111111111111"}
+        )
         logger.debug("C2C getting fees...")
         r = await self._client.post(
             "https://e-commerce.raiffeisen.ru/ws/link/c2c/v1.0/fees",

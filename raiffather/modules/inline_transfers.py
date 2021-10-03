@@ -56,7 +56,13 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         else:
             raise ValueError(f"{r.status_code} {r.text}")
 
-    async def internal_transfer_init(self, amount: Union[float, int], src: Union[str, int, Account], dst: Union[str, int, Account], source_currency=True):
+    async def internal_transfer_init(
+        self,
+        amount: Union[float, int],
+        src: Union[str, int, Account],
+        dst: Union[str, int, Account],
+        source_currency=True,
+    ):
         if type(src) in [int, str]:
             src = self.products.accounts[src]
         if type(dst) in [int, str]:
