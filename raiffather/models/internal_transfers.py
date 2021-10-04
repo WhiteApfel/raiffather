@@ -4,7 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-class InternalTransferMethod(BaseModel):
+class VerifyMethod(BaseModel):
     method: Literal["PUSHOTP", "SMSOTP", "STUBOTP"]
 
 
@@ -18,14 +18,14 @@ class InternalTransferDetail(BaseModel):
 
 class InternalTransferInit(BaseModel):
     request_id: int = Field(..., alias="requestId")
-    methods: list[InternalTransferMethod]
+    methods: list[VerifyMethod]
     detail: InternalTransferDetail
     document: str
     type_id: int = Field(..., alias="typeId")
 
     @property
     def stub_allowed(self):
-        return InternalTransferMethod(method="STUBOTP") in self.methods
+        return VerifyMethod(method="STUBOTP") in self.methods
 
 
 class InternalTransferExchangeRate(BaseModel):
