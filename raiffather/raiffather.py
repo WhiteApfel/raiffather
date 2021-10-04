@@ -11,5 +11,6 @@ class Raiffather(
     RaiffatherTransactions,
     RaiffatherSettings,
     RaiffatherInlineTransfers,
+    RaiffatherOther
 ):
     ...
