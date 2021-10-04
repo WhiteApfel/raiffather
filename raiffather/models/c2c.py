@@ -175,3 +175,28 @@ class C2cNewCard(BaseModel):
     cvv: Optional[str]
     name: Optional[str]
     add_to_list: bool = Field(False, alias="addToList")
+
+
+class BinInfoPaymentSystem(BaseModel):
+    id: str
+    name: str
+
+
+class BinInfoName(BaseModel):
+    name: str
+
+
+class BinInfoLetter(BaseModel):
+    name: str
+
+
+class BinInfo(BaseModel):
+    bin: str
+    country: str
+    is_delayed: bool = Field(..., alias="isDelayed")
+    payment_system: BinInfoPaymentSystem = Field(..., alias="paymentSystem")
+    name: BinInfoName
+    letter: BinInfoLetter
+    color: str
+    is_rb_group: bool = Field(..., alias="isRbGroup")
+    is_rb_russia: bool = Field(..., alias="isRbRussia")
