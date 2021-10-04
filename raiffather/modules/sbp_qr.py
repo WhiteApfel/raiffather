@@ -73,3 +73,18 @@ class RaiffatherSbpQR(RaiffatherBase):
         if verify_response.status_code == 204:
             return True
         return False
+
+    async def sbp_qr_decode_url(self, url):
+        data = {
+            "scanCodeType": 3,
+            "scanString": url
+        }
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/rest/1/qr",
+            headers=await self.authorized_headers,
+            json=data,
+        )
+        if r.status_code == 200:
+            return r.json()
+        else:
+            raise ValueError(f"{r.status_code} {r.text}")
