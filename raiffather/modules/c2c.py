@@ -8,7 +8,8 @@ from raiffather.models.c2c import (
     C2cRetrieve,
     C2cTpcOne,
     C2cCard,
-    C2cNewCard, BinInfo,
+    C2cNewCard,
+    BinInfo,
 )
 from raiffather.modules.base import RaiffatherBase
 
@@ -250,10 +251,9 @@ class RaiffatherC2C(RaiffatherBase):
     async def c2c_bin_info(self, bin):
         r = await self._client.get(
             f"https://amobile.raiffeisen.ru/rest/transfer/c2c/bin/{bin}",
-            headers=await self.authorized_headers
+            headers=await self.authorized_headers,
         )
         if r.status_code == 200:
             return BinInfo(**r.json())
         else:
             raise ValueError(f"{r.status_code} {r.text}")
-

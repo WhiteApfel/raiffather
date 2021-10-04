@@ -11,7 +11,7 @@ class SbpQRData(BaseModel):
 
     @property
     def qrc_type(self):
-        return "QRStat" if self.type == '01' else "QRDin"
+        return "QRStat" if self.type == "01" else "QRDin"
 
 
 class SbpQRInitDetail(BaseModel):
