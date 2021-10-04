@@ -123,7 +123,7 @@ class RaiffatherC2C(RaiffatherBase):
             if type(src) is C2cTpcOne
             else src.card.id
             if type(src) is C2cCard
-            else src.dict(),
+            else src.dict(by_alias=True),
             "type": class2type[type(src)],
         }
         dst_data = {
@@ -131,7 +131,7 @@ class RaiffatherC2C(RaiffatherBase):
             if type(dst) is C2cTpcOne
             else dst.card.id
             if type(dst) is C2cCard
-            else dst.dict(),
+            else dst.dict(by_alias=True),
             "type": class2type[type(dst)],
         }
         logger.debug("C2C initialization...")

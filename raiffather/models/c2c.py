@@ -170,7 +170,7 @@ class C2cRetrieve(BaseModel):
 
 
 class C2cNewCard(BaseModel):
-    number: int = Field(False, alias="pam")
+    number: str = Field(..., alias="pan")
     expiry: Optional[str]
     cvv: Optional[str]
     name: Optional[str]
