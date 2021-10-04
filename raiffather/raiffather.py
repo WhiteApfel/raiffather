@@ -8,6 +8,7 @@ logger.disable("raiffather")
 class Raiffather(
     RaiffatherC2C,
     RaiffatherSBP,
+    RaiffatherSbpQR,
     RaiffatherTransactions,
     RaiffatherSettings,
     RaiffatherInlineTransfers,

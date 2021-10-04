@@ -4,3 +4,4 @@ from raiffather.modules.transactions import RaiffatherTransactions
 from raiffather.modules.settings import RaiffatherSettings
 from raiffather.modules.inline_transfers import RaiffatherInlineTransfers
 from raiffather.modules.other import RaiffatherOther
+from raiffather.modules.sbp_qr import RaiffatherSbpQR
