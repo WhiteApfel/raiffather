@@ -1,4 +1,4 @@
-from raiffather.models.sbp_qr import SbpQRData, SbpQRInit
+from raiffather.models.sbp_qr import SbpQRData, SbpQRInit, SbpQrInfo
 from raiffather.modules.base import RaiffatherBase
 
 
@@ -85,6 +85,6 @@ class RaiffatherSbpQR(RaiffatherBase):
             json=data,
         )
         if r.status_code == 200:
-            return r.json()
+            return SbpQrInfo(**r.json())
         else:
             raise ValueError(f"{r.status_code} {r.text}")

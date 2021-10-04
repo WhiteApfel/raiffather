@@ -32,3 +32,23 @@ class SbpQRInit(BaseModel):
     request_id: int = Field(..., alias="requestId")
     templates_allowed: bool = Field(..., alias="templatesAllowed")
     template_signed: bool = Field(..., alias="templateSigned")
+
+
+class SbpQrInfoObject(BaseModel):
+    qrc_id: str = Field(..., alias="qrcId")
+    qrc_type: str = Field(..., alias="qrcType")
+    amount: float
+    currency: str
+    payment_purpose: str = Field(..., alias="paymentPurpose")
+    legal_name: str = Field(..., alias="legalName")
+    brand_name: str = Field(..., alias="brandName")
+    address: str
+    member_id: str = Field(..., alias="memberId")
+    crc: str
+    mcc: str
+    limits: dict
+
+
+class SbpQrInfo(BaseModel):
+    type_id: str = Field(..., alias="typeId")
+    object: SbpQrInfoObject
