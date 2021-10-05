@@ -3,31 +3,31 @@ class RaifException(Exception):
         super().__init__(*args, *kwargs)
 
 
-class RaifResponseException(RaifException):
+class RaifErrorResponse(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
 
-class RaifUnauthorizedException(RaifException):
+class RaifUnauthorized(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
 
-class RaifDeviceNotVerifyException(RaifException):
+class RaifDeviceNotVerify(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
 
-class Raif3DSErrorException(RaifException):
+class RaifError3DS(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
 
-class RaifProductNotFoundException(RaifException):
+class RaifProductNotFound(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
 
-class RaifPasswordDeprecatedException(RaifException):
+class RaifPasswordDeprecated(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
