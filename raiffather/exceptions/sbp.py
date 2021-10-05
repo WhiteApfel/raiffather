@@ -1,4 +1,7 @@
-class SBPRecipientNotFound(ValueError):
+from raiffather.exceptions.base import RaifException
+
+
+class SBPRecipientNotFound(RaifException):
     __module__ = "Raiffather"
 
     def __init__(self, message):
