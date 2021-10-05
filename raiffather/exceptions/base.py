@@ -21,3 +21,8 @@ class RaifDeviceNotVerifyException(RaifException):
 class Raif3DSErrorException(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+
+
+class RaifProductNotFoundException(RaifException):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
