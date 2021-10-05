@@ -11,3 +11,8 @@ class RaifResponseException(RaifException):
 class RaifUnauthorizedException(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+
+
+class RaifDeviceNotVerifyException(RaifException):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
