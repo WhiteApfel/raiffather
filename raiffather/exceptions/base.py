@@ -8,7 +8,7 @@ class RaifErrorResponse(RaifException):
         super().__init__(*args, *kwargs)
 
 
-class RaifUnauthorized(RaifException):
+class RaifUnauthorized(RaifErrorResponse):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
@@ -28,6 +28,6 @@ class RaifProductNotFound(RaifException):
         super().__init__(*args, *kwargs)
 
 
-class RaifPasswordDeprecated(RaifException):
+class RaifPasswordDeprecated(RaifErrorResponse):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
