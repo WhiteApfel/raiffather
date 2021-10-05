@@ -26,3 +26,8 @@ class Raif3DSErrorException(RaifException):
 class RaifProductNotFoundException(RaifException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
+
+
+class RaifPasswordDeprecatedException(RaifException):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
