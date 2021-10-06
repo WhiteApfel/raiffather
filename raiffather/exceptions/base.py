@@ -6,8 +6,11 @@ class RaifException(Exception):
 
 
 class RaifErrorResponse(RaifException):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, *kwargs)
+    def __init__(self, response, *args, **kwargs):
+        self.status_code = response.status_code
+        self.text = response.text
+        self.response = response
+        super().__init__(f"{self.status_code}: {self.text}", *args, **kwargs)
 
 
 class RaifUnauthorized(RaifErrorResponse):
@@ -26,7 +29,9 @@ class RaifError3DS(RaifException):
 
 
 class RaifProductNotFound(RaifException):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, sought, products, *args, **kwargs):
+        self.sought = sought
+        self.products = products
         super().__init__(*args, *kwargs)
 
 
