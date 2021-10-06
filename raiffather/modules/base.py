@@ -19,8 +19,9 @@ from loguru import logger
 from pullkin import AioPullkin
 from pullkin.proto.notification import Notification
 from randmac import RandMac
-from tenacity import retry, retry_if_result, stop_after_attempt
+from tenacity import retry, retry_if_result, stop_after_attempt, retry_if_exception
 
+from raiffather.exceptions.base import RaifUnauthorized
 from raiffather.models.auth import OauthResponse, ResponseOwner
 from raiffather.models.balance import Balance
 from raiffather.models.device_info import DeviceInfo
@@ -352,7 +353,7 @@ class RaiffatherBase:
 
     @retry(
         stop=stop_after_attempt(2),
-        retry=retry_if_result(lambda x: str(x) == "Unauthorized"),
+        retry=retry_if_exception(RaifUnauthorized),
     )
     async def balance(self) -> list[Balance]:
         """
@@ -368,13 +369,13 @@ class RaiffatherBase:
             return parsed_r
         elif r.status_code == 401:
             await self._auth()
-            raise ValueError("Unauthorized")
+            raise RaifUnauthorized()
         else:
             raise ValueError(f"Status: {r.status_code}")
 
     @retry(
         stop=stop_after_attempt(2),
-        retry=retry_if_result(lambda x: str(x) == "Unauthorized"),
+        retry=retry_if_exception(RaifUnauthorized),
     )
     async def get_products(self) -> Products:
         r = await self._client.get(
@@ -387,6 +388,6 @@ class RaiffatherBase:
             return parsed_r
         elif r.status_code == 403:
             await self._auth()
-            raise ValueError("Unauthorized")
+            raise RaifUnauthorized()
         else:
             raise ValueError(f"Status: {r.status_code}")
