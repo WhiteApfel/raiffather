@@ -2,6 +2,7 @@ from typing import AsyncGenerator
 
 from loguru import logger
 
+from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.transactions import Transactions, Transaction
 from raiffather.modules.base import RaiffatherBase
 
@@ -29,9 +30,7 @@ class RaiffatherTransactions(RaiffatherBase):
         if transactions_response.status_code == 200:
             return Transactions(**transactions_response.json())
         else:
-            raise ValueError(
-                f"{transactions_response.status_code} {transactions_response.text}"
-            )
+            raise RaifErrorResponse(transactions_response)
 
     async def global_history_generator(self) -> AsyncGenerator[Transaction, None]:
         """
