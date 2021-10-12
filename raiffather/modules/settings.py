@@ -1,3 +1,4 @@
+from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.modules.base import RaiffatherBase
 
 
@@ -19,6 +20,4 @@ class RaiffatherSettings(RaiffatherBase):
         if settings_response.status_code == 200:
             return True
         else:
-            raise ValueError(
-                f"{settings_response.status_code} {settings_response.text}"
-            )
+            raise RaifErrorResponse(settings_response)
