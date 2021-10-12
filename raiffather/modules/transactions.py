@@ -2,7 +2,7 @@ from typing import AsyncGenerator
 
 from loguru import logger
 
-from raiffather.exceptions.base import RaifErrorResponse
+from raiffather.exceptions.base import RaifErrorResponse, RaifUnauthorized
 from raiffather.models.transactions import Transactions, Transaction
 from raiffather.modules.base import RaiffatherBase
 
@@ -29,6 +29,8 @@ class RaiffatherTransactions(RaiffatherBase):
         )
         if transactions_response.status_code == 200:
             return Transactions(**transactions_response.json())
+        elif transactions_response.status_code == 401:
+            raise RaifUnauthorized(transactions_response)
         else:
             raise RaifErrorResponse(transactions_response)
 

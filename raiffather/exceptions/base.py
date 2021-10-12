@@ -14,7 +14,7 @@ class RaifErrorResponse(RaifException):
 
 
 class RaifUnauthorized(RaifErrorResponse):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, response, *args, **kwargs):
         super().__init__(*args, *kwargs)
 
 
