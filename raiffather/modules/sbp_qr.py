@@ -1,3 +1,4 @@
+from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.sbp_qr import SbpQRData, SbpQRInit, SbpQrInfo
 from raiffather.modules.base import RaiffatherBase
 
@@ -72,7 +73,8 @@ class RaiffatherSbpQR(RaiffatherBase):
         )
         if verify_response.status_code == 204:
             return True
-        return False
+        else:
+            raise RaifErrorResponse(verify_response)
 
     async def sbp_qr_decode_url(self, url):
         data = {
@@ -87,4 +89,4 @@ class RaiffatherSbpQR(RaiffatherBase):
         if r.status_code == 200:
             return SbpQrInfo(**r.json())
         else:
-            raise ValueError(f"{r.status_code} {r.text}")
+            raise RaifErrorResponse(r)
