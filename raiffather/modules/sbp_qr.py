@@ -12,7 +12,7 @@ class RaiffatherSbpQR(RaiffatherBase):
         if r.status_code == 200:
             return True
         else:
-            raise ValueError(f"{r.status_code} {r.text}")
+            raise RaifErrorResponse(r)
 
     async def sbp_qr_pay_init(self, amount, src, qr_data: SbpQRData):
         data = {
@@ -33,7 +33,7 @@ class RaiffatherSbpQR(RaiffatherBase):
         if r.status_code == 200:
             return SbpQRInit(**r.json())
         else:
-            raise ValueError(f"{r.status_code} {r.text}")
+            raise RaifErrorResponse(r)
 
     async def sbp_qr_send_push(self, request_id) -> str:
         """
@@ -54,9 +54,7 @@ class RaiffatherSbpQR(RaiffatherBase):
             otp = await self.wait_code(push_id)
             return otp
         else:
-            raise ValueError(
-                f"{send_code_response.status_code} {send_code_response.text}"
-            )
+            raise RaifErrorResponse(send_code_response)
 
     async def sbp_qr_push_verify(self, request_id, code) -> bool:
         """
