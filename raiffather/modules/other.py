@@ -1,3 +1,4 @@
+from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.modules.base import RaiffatherBase
 
 
@@ -10,4 +11,4 @@ class RaiffatherOther(RaiffatherBase):
         if r.status_code == 200:
             return r.json()
         else:
-            raise ValueError(f"{r.status_code} {r.text}")
+            raise RaifErrorResponse(r)
