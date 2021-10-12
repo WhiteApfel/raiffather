@@ -75,10 +75,7 @@ class RaiffatherSbpQR(RaiffatherBase):
             raise RaifErrorResponse(verify_response)
 
     async def sbp_qr_decode_url(self, url):
-        data = {
-            "scanCodeType": 3,
-            "scanString": url
-        }
+        data = {"scanCodeType": 3, "scanString": url}
         r = await self._client.post(
             "https://amobile.raiffeisen.ru/rest/1/qr",
             headers=await self.authorized_headers,
