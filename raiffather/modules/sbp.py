@@ -64,7 +64,7 @@ class RaiffatherSBP(RaiffatherBase):
         )
         if r.status_code == 200:
             return SbpPam(**r.json())
-        elif r.status_code == 417:
+        if r.status_code == 417:
             raise SBPRecipientNotFound(r.json()["_form"][0])
         raise RaifErrorResponse(r)
 
