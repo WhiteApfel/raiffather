@@ -3,6 +3,7 @@ from typing import List
 from fuzzywuzzy import process
 from loguru import logger
 
+from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.exceptions.sbp import SBPRecipientNotFound
 from raiffather.models.products import Account
 from raiffather.models.sbp import SbpBank, SbpInit, SbpPam, SbpSettings, SbpCommission
@@ -27,8 +28,7 @@ class RaiffatherSBP(RaiffatherBase):
         )
         if settings_reponse.status_code == 200:
             return SbpSettings(**settings_reponse.json())
-        else:
-            raise ValueError(f"{settings_reponse.status_code} {settings_reponse.text}")
+        raise RaifErrorResponse(settings_reponse)
 
     async def sbp_banks(self, phone, cba: str = None):
         if not self.products:
@@ -41,10 +41,7 @@ class RaiffatherSBP(RaiffatherBase):
         )
         if sbp_banks_response.status_code == 200:
             return [SbpBank(**bank) for bank in sbp_banks_response.json()]
-        else:
-            raise ValueError(
-                f"{sbp_banks_response.status_code} {sbp_banks_response.text}"
-            )
+        raise RaifErrorResponse(sbp_banks_response)
 
     async def sbp_pam(self, bank_id: str, phone: str, cba: str = None) -> SbpPam:
         """
@@ -69,8 +66,7 @@ class RaiffatherSBP(RaiffatherBase):
             return SbpPam(**r.json())
         elif r.status_code == 417:
             raise SBPRecipientNotFound(r.json()["_form"][0])
-        else:
-            raise ValueError(f"{r.status_code}: {r.text}")
+        raise RaifErrorResponse(r)
 
     async def sbp_commission(
         self, bank, phone, amount, cba: str = None
@@ -97,10 +93,7 @@ class RaiffatherSBP(RaiffatherBase):
         )
         if comission_response.status_code == 200:
             return SbpCommission(**comission_response.json())
-        else:
-            raise ValueError(
-                f"{comission_response.status_code} {comission_response.text}"
-            )
+        raise RaifErrorResponse(comission_response)
 
     async def sbp_init(
         self, amount, bank, phone, message=None, cba: str = None
@@ -134,8 +127,7 @@ class RaiffatherSBP(RaiffatherBase):
         )
         if init_response.status_code == 200:
             return SbpInit(**init_response.json())
-        else:
-            raise ValueError(f"{init_response.status_code} {init_response.text}")
+        raise RaifErrorResponse(init_response)
 
     async def sbp_prepare(self) -> bool:
         """
@@ -148,8 +140,7 @@ class RaiffatherSBP(RaiffatherBase):
         )
         if r.status_code == 200:
             return True
-        else:
-            raise ValueError(f"{r.status_code} {r.text}")
+        raise RaifErrorResponse(r)
 
     async def sbp_accounts(self) -> List[Account]:
         """
@@ -162,10 +153,7 @@ class RaiffatherSBP(RaiffatherBase):
         )
         if accounts_response.status_code == 200:
             return [Account(**a) for a in accounts_response.json()]
-        else:
-            raise ValueError(
-                f"{accounts_response.status_code} {accounts_response.text}"
-            )
+        raise RaifErrorResponse(accounts_response)
 
     def sbp_bank_fuzzy_search(self, banks: list, bank: str):
         """
@@ -195,10 +183,7 @@ class RaiffatherSBP(RaiffatherBase):
             push_id = send_code_response.json()["pushId"]
             otp = await self.wait_code(push_id)
             return otp
-        else:
-            raise ValueError(
-                f"{send_code_response.status_code} {send_code_response.text}"
-            )
+        raise RaifErrorResponse(send_code_response)
 
     async def sbp_push_verify(self, request_id, code) -> bool:
         """
@@ -215,7 +200,7 @@ class RaiffatherSBP(RaiffatherBase):
         )
         if verify_response.status_code == 204:
             return True
-        return False
+        raise RaifErrorResponse(verify_response)
 
     async def sbp(self, phone, bank, amount, comment=None):
         """
