@@ -20,9 +20,8 @@ from loguru import logger
 from pullkin import AioPullkin
 from pullkin.proto.notification import Notification
 from randmac import RandMac
-from tenacity import retry, stop_after_attempt, retry_if_exception
 
-from raiffather.exceptions.base import RaifUnauthorized, RaifErrorResponse
+from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.auth import OauthResponse, ResponseOwner
 from raiffather.models.balance import Balance
 from raiffather.models.device_info import DeviceInfo
@@ -349,10 +348,6 @@ class RaiffatherBase:
             return True
         raise RaifErrorResponse(verify_response)
 
-    @retry(
-        stop=stop_after_attempt(2),
-        retry=retry_if_exception(RaifUnauthorized),
-    )
     async def balance(self) -> list[Balance]:
         """
         Общий баланс со всех счетов, рассчитанный по курсу ЦБ. В приложении отображается в самой верхней части.
@@ -365,14 +360,8 @@ class RaiffatherBase:
         if r.status_code == 200:
             parsed_r = [Balance(**b) for b in r.json()]
             return parsed_r
-        if r.status_code == 401:
-            await self._auth()
         raise RaifErrorResponse(r)
 
-    @retry(
-        stop=stop_after_attempt(2),
-        retry=retry_if_exception(RaifUnauthorized),
-    )
     async def get_products(self) -> Products:
         r = await self._client.get(
             "https://amobile.raiffeisen.ru/rest/1/product/list",
@@ -381,7 +370,5 @@ class RaiffatherBase:
         if r.status_code == 200:
             parsed_r = Products(**r.json())
             self.products = parsed_r
-            return parsed_r
-        if r.status_code == 403:
-            await self._auth()
+            return self.products
         raise RaifErrorResponse(r)
