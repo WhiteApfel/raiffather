@@ -19,7 +19,7 @@ from loguru import logger
 from pullkin import AioPullkin
 from pullkin.proto.notification import Notification
 from randmac import RandMac
-from tenacity import retry, retry_if_result, stop_after_attempt, retry_if_exception
+from tenacity import retry, stop_after_attempt, retry_if_exception
 
 from raiffather.exceptions.base import RaifUnauthorized, RaifErrorResponse
 from raiffather.models.auth import OauthResponse, ResponseOwner
