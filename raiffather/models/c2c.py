@@ -112,31 +112,27 @@ class C2cTpc(BaseModel):
             yield a
 
     def __getitem__(self, item):
+        found = []
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
         elif len(str(item)) == 6:
-            found = []
             for c in self.cards:
                 if c.id == int(item):
                     found.append(c)
             if len(found) == 1:
                 return found[0]
         elif len(str(item)) == 4:
-            found = []
             for c in self.cards:
                 if c.last_digits == int(item):
                     found.append(c)
             if len(found) == 1:
                 return found[0]
-        elif type(item) is str:
-            found = []
+        if len(found) == 0 and type(item) is str:
             for c in self.cards:
                 if c.name == str(item):
                     found.append(c)
             if len(found) == 1:
                 return found[0]
-        else:
-            found = []
         if len(found) == 0:
             raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
         raise KeyError(

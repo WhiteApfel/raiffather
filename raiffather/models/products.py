@@ -82,38 +82,33 @@ class Cards(BaseModel):
     cards: list[Card]
 
     def __getitem__(self, item):
+        found = []
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
         elif str(item).isdigit() and len(str(item)) == 8:  # id, идентификатор карты в райфе
-            found = []
             for a in self.cards:
                 if a.id == int(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-            elif len(found) == 0:  # icdb_id, хз что, но тоже, вроде, уникальное
-                found = []
+            elif len(found) == 0:  # icdb_id, хз что, но тоже, вроде, уникальное и на 8 цифр
                 for a in self.cards:
                     if a.icdb_id == str(item):
                         found.append(a)
                 if len(found) == 1:
                     return found[0]
         elif str(item).isdigit() and len(str(item)) == 4:
-            found = []
             for a in self.cards:
                 if a.pan[-4:] == str(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        elif type(item) is str:  # name, название счёта
-            found = []
+        if len(found) == 0 and type(item) is str:  # name, название счёта
             for a in self.cards:
                 if a.name == str(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        else:
-            found = []
         if len(found) == 0:
             raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
         raise KeyError(
@@ -133,38 +128,33 @@ class Accounts(BaseModel):
     accounts: list[Account]
 
     def __getitem__(self, item):
+        found = []
         if type(item) is int and item < len(self.accounts):
             return self.accounts[item]
         elif str(item).isdigit() and len(str(item)) == 20:  # cba, номер счёта
-            found = []
             for a in self.accounts:
                 if a.cba == str(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
         elif str(item).isdigit() and len(str(item)) == 8:  # id, идентификатор счёта в райфе
-            found = []
             for a in self.accounts:
                 if a.id == int(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
         elif str(item).isdigit() and len(str(item)) == 10:  # rma, хз что, но тоже, вроде, уникальное
-            found = []
             for a in self.accounts:
                 if a.rma == str(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        elif type(item) is str:  # name, название счёта
-            found = []
+        if len(found) == 0 and type(item) is str:  # name, название счёта
             for a in self.accounts:
                 if a.name == str(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        else:
-            found = []
         if len(found) == 0:
             raise KeyError(f"Not found {item} in accounts ({len(self.accounts)})")
         raise KeyError(
