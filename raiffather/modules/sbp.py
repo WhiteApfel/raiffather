@@ -218,14 +218,7 @@ class RaiffatherSBP(RaiffatherBase):
         bank_name = self.sbp_bank_fuzzy_search([b.name for b in banks], bank)
         bank = next((bank for bank in banks if bank.name == bank_name), None)
         if bank:
-            pam = await self.sbp_pam(bank_id=bank.id, phone=phone, cba=cba)
-            com = float(
-                (
-                    await self.sbp_commission(
-                        bank=bank.id, phone=phone, amount=float(amount), cba=cba
-                    )
-                ).commission
-            )
+            await self.sbp_pam(bank_id=bank.id, phone=phone, cba=cba)
             init = await self.sbp_init(float(amount), bank.id, phone, comment, cba)
             code = await self.sbp_send_push(init.request_id)
             success = await self.sbp_push_verify(init.request_id, code)
