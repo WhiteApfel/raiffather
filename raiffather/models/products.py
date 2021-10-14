@@ -4,6 +4,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import Field
 
+from raiffather.exceptions.base import RaifFoundMoreThanOneProduct, RaifProductNotFound
 from raiffather.models.balance import Currency
 
 
@@ -109,11 +110,9 @@ class Cards(BaseModel):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        if len(found) == 0:
-            raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
-        raise KeyError(
-            f"Found more then one card with item {item} in cards ({len(self.cards)})"
-        )
+        if found:
+            raise RaifFoundMoreThanOneProduct(item, found, self.cards)
+        raise RaifProductNotFound(item, self.cards)
 
     @property
     def visa(self):
@@ -155,11 +154,10 @@ class Accounts(BaseModel):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        if len(found) == 0:
-            raise KeyError(f"Not found {item} in accounts ({len(self.accounts)})")
-        raise KeyError(
-            f"Found more then one account with item {item} in accounts ({len(self.accounts)})"
-        )
+
+        if found:
+            raise RaifFoundMoreThanOneProduct(item, found, self.accounts)
+        raise RaifProductNotFound(item, self.accounts)
 
     def __len__(self):
         return len(self.accounts)

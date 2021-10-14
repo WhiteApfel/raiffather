@@ -2,6 +2,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, validator
 
+from raiffather.exceptions.base import RaifFoundMoreThanOneProduct, RaifProductNotFound
 from raiffather.models.products import Card
 
 
@@ -94,11 +95,9 @@ class C2cCards(BaseModel):
                 return found[0]
         else:
             found = []
-        if len(found) == 0:
-            raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
-        raise KeyError(
-            f"Found more then one card with item {item} in cards ({len(self.cards)})"
-        )
+        if found:
+            raise RaifFoundMoreThanOneProduct(item, found, self.cards)
+        raise RaifProductNotFound(item, self.cards)
 
 
 class C2cTpc(BaseModel):
@@ -133,11 +132,10 @@ class C2cTpc(BaseModel):
                     found.append(c)
             if len(found) == 1:
                 return found[0]
-        if len(found) == 0:
-            raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
-        raise KeyError(
-            f"Found more then one card with item {item} in cards ({len(self.cards)})"
-        )
+
+        if found:
+            raise RaifFoundMoreThanOneProduct(item, found, self.cards)
+        raise RaifProductNotFound(item, self.cards)
 
     @property
     def visa(self):

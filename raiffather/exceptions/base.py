@@ -35,6 +35,14 @@ class RaifProductNotFound(RaifException):
         super().__init__(*args, *kwargs)
 
 
+class RaifFoundMoreThanOneProduct(RaifException):
+    def __init__(self, sought, found, products, *args, **kwargs):
+        self.sought = sought
+        self.found = found
+        self.products = products
+        super().__init__(*args, *kwargs)
+
+
 class RaifPasswordDeprecated(RaifErrorResponse):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
