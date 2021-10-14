@@ -86,13 +86,13 @@ class Cards(BaseModel):
         found = []
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
-        elif str(item).isdigit() and len(str(item)) == 8:  # id, идентификатор карты в райфе
+        if str(item).isdigit() and len(str(item)) == 8:  # id, идентификатор карты в райфе
             for a in self.cards:
                 if a.id == int(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-            elif len(found) == 0:  # icdb_id, хз что, но тоже, вроде, уникальное и на 8 цифр
+            if len(found) == 0:  # icdb_id, хз что, но тоже, вроде, уникальное и на 8 цифр
                 for a in self.cards:
                     if a.icdb_id == str(item):
                         found.append(a)
@@ -131,7 +131,7 @@ class Accounts(BaseModel):
         found = []
         if type(item) is int and item < len(self.accounts):
             return self.accounts[item]
-        elif str(item).isdigit() and len(str(item)) == 20:  # cba, номер счёта
+        if str(item).isdigit() and len(str(item)) == 20:  # cba, номер счёта
             for a in self.accounts:
                 if a.cba == str(item):
                     found.append(a)

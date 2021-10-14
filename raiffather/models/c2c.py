@@ -73,7 +73,7 @@ class C2cCards(BaseModel):
         found = []
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
-        elif len(str(item)) == 8:
+        if len(str(item)) == 8:
             for c in self.cards:
                 if c.card.id == int(item):
                     found.append(c)
@@ -111,7 +111,7 @@ class C2cTpc(BaseModel):
         found = []
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
-        elif len(str(item)) == 6:
+        if len(str(item)) == 6:
             for c in self.cards:
                 if c.id == int(item):
                     found.append(c)
