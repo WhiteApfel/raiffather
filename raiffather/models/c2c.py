@@ -96,10 +96,9 @@ class C2cCards(BaseModel):
             found = []
         if len(found) == 0:
             raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
-        else:
-            raise KeyError(
-                f"Found more then one card with item {item} in cards ({len(self.cards)})"
-            )
+        raise KeyError(
+            f"Found more then one card with item {item} in cards ({len(self.cards)})"
+        )
 
 
 class C2cTpc(BaseModel):
@@ -140,10 +139,9 @@ class C2cTpc(BaseModel):
             found = []
         if len(found) == 0:
             raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
-        else:
-            raise KeyError(
-                f"Found more then one card with item {item} in cards ({len(self.cards)})"
-            )
+        raise KeyError(
+            f"Found more then one card with item {item} in cards ({len(self.cards)})"
+        )
 
     @property
     def visa(self):
