@@ -361,9 +361,8 @@ class RaiffatherBase:
         if r.status_code == 200:
             parsed_r = [Balance(**b) for b in r.json()]
             return parsed_r
-        elif r.status_code == 401:
+        if r.status_code == 401:
             await self._auth()
-            raise RaifUnauthorized(r)
         raise RaifErrorResponse(r)
 
     @retry(
