@@ -33,7 +33,7 @@ class Account(BaseModel):
     def __lt__(self, other):
         if type(other) is Account:
             return self.balance < other.balance
-        elif type(other) in [int, float]:
+        if type(other) in [int, float]:
             return self.balance < other
         raise ValueError(
             f"Objects are compared by balance. "
@@ -71,7 +71,7 @@ class Card(BaseModel):
     def __lt__(self, other):
         if type(other) is Card:
             return self.balance < other.balance
-        elif type(other) in [int, float]:
+        if type(other) in [int, float]:
             return self.balance < other
         raise ValueError(
             f"Objects are compared by balance. "
