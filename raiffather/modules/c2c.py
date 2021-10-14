@@ -176,8 +176,7 @@ class RaiffatherC2C(RaiffatherBase):
                 f"{e3dsotp_response.status_code}: {e3dsotp_response.text}"
             )
             return E3DSOTPData(**e3dsotp_response.json())
-        else:
-            raise ValueError(f"{e3dsotp_response.status_code} {e3dsotp_response.text}")
+        raise ValueError(f"{e3dsotp_response.status_code} {e3dsotp_response.text}")
 
     async def c2c_e3ds_pareq(self, acs_url, pareq):
         data = {
