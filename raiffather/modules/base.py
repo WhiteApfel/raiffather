@@ -13,6 +13,7 @@ from string import hexdigits
 from typing import Optional
 from uuid import uuid4
 
+from appdirs import AppDirs
 from async_property import async_property
 from httpx import AsyncClient
 from loguru import logger
@@ -35,10 +36,12 @@ class RaiffatherBase:
     Этот класс будет удобен для работы с апишкой. Не ешь меня. Я тебе пригожусь.
     """
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, app_name='default'):
         self.__client: AsyncClient = None
         self.__username: str = username
         self.__password: str = password
+        self.__app_dirs = AppDirs("raiffather", "whiteapfel")
+        self.__app_name = app_name
         self.__access_token: str = None
         self.__device_info: str = None
         self.__fcm_sender_id: int = 581003993230  # Raiffeisen
@@ -63,23 +66,24 @@ class RaiffatherBase:
         await self.__receiving_push
 
     async def _push_server(self):
-        with open(".persistent_ids.txt", "a+") as f:
+        persistent_path = f"{self.__app_dirs.user_data_dir}/{self.__app_name}/persistent_ids.txt"
+        with open(persistent_path, "a+") as f:
             received_persistent_ids = [x.strip() for x in f]
 
         @self.pullkin.on_notification()
         async def on_notification(obj, notification: Notification, data_message):
             idstr = data_message.persistent_id + "\n"
-            with open(".persistent_ids.txt", "r") as f:
+            with open(persistent_path, "r") as f:
                 if idstr in f:
                     return
-            with open(".persistent_ids.txt", "a") as f:
+            with open(persistent_path, "a") as f:
                 f.write(idstr)
             if "data" in notification.raw_data:
                 server_message_id = notification["data"]["serverMessageId"] + "\n"
-                with open(".persistent_ids.txt", "r") as f:
+                with open(persistent_path, "r") as f:
                     if server_message_id in f:
                         return
-                with open(".persistent_ids.txt", "a") as f:
+                with open(persistent_path, "a") as f:
                     f.write(server_message_id)
 
                 mfms_h = {"x-device-uid": self.device.uid}
@@ -221,7 +225,7 @@ class RaiffatherBase:
     @property
     def device(self) -> DeviceInfo:
         if not self.__device_info:
-            filename = f'{os.environ.get("HOME", ".")}/.raiffather_device_info.json'
+            filename = f'{self.__app_dirs.user_data_dir}/{self.__app_name}/raiffather_device_info.json'
             if not os.path.exists(filename):
                 fcm_cred = self.pullkin.register(sender_id=self.__fcm_sender_id)
                 network = IPv4Network(f"192.168.0.0/16")
