@@ -68,8 +68,7 @@ class RaiffatherSbpQR(RaiffatherBase):
         )
         if verify_response.status_code == 204:
             return True
-        else:
-            raise RaifErrorResponse(verify_response)
+        raise RaifErrorResponse(verify_response)
 
     async def sbp_qr_decode_url(self, url):
         data = {"scanCodeType": 3, "scanString": url}
