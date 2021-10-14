@@ -36,7 +36,7 @@ class RaiffatherBase:
     Этот класс будет удобен для работы с апишкой. Не ешь меня. Я тебе пригожусь.
     """
 
-    def __init__(self, username, password, app_name='default'):
+    def __init__(self, username, password, app_name="default"):
         self.__client: AsyncClient = None
         self.__username: str = username
         self.__password: str = password
@@ -66,7 +66,7 @@ class RaiffatherBase:
         await self.__receiving_push
 
     async def _push_server(self):
-        filedir = f'{self.__app_dirs.user_data_dir}/{self.__app_name}'
+        filedir = f"{self.__app_dirs.user_data_dir}/{self.__app_name}"
         persistent_path = f"{filedir}/persistent_ids.txt"
         Path(filedir).mkdir(parents=True, exist_ok=True)
 
@@ -228,8 +228,8 @@ class RaiffatherBase:
     @property
     def device(self) -> DeviceInfo:
         if not self.__device_info:
-            filedir = f'{self.__app_dirs.user_data_dir}/{self.__app_name}'
-            filename = f'{filedir}/raiffather_device_info.json'
+            filedir = f"{self.__app_dirs.user_data_dir}/{self.__app_name}"
+            filename = f"{filedir}/raiffather_device_info.json"
             Path(filedir).mkdir(parents=True, exist_ok=True)
             if not os.path.exists(filename):
                 fcm_cred = self.pullkin.register(sender_id=self.__fcm_sender_id)
