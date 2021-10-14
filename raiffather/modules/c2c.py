@@ -206,9 +206,9 @@ class RaiffatherC2C(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def c2c_bin_info(self, bin):
+    async def c2c_bin_info(self, card_bin):
         r = await self._client.get(
-            f"https://amobile.raiffeisen.ru/rest/transfer/c2c/bin/{bin}",
+            f"https://amobile.raiffeisen.ru/rest/transfer/c2c/bin/{card_bin}",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
