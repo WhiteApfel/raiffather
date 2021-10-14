@@ -87,7 +87,7 @@ class RaiffatherC2C(RaiffatherBase):
             "https://e-commerce.raiffeisen.ru/ws/link/c2c/v1.0/fees",
             headers=await self.authorized_headers,
             json={
-                "amount": 1.0,
+                "amount": float(amount),
                 "dst": dst_data,
                 "feeCurrency": 643,
                 "src": src_data,
