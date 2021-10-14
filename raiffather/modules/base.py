@@ -21,7 +21,7 @@ from pullkin.proto.notification import Notification
 from randmac import RandMac
 from tenacity import retry, retry_if_result, stop_after_attempt, retry_if_exception
 
-from raiffather.exceptions.base import RaifUnauthorized
+from raiffather.exceptions.base import RaifUnauthorized, RaifErrorResponse
 from raiffather.models.auth import OauthResponse, ResponseOwner
 from raiffather.models.balance import Balance
 from raiffather.models.device_info import DeviceInfo
@@ -125,7 +125,7 @@ class RaiffatherBase:
                     )
                     if verify_received_response.status_code == 200:
                         return
-                    raise ValueError(f"Received {verify_received_response.status_code}")
+                    raise RaifErrorResponse(verify_received_response)
 
         self.pullkin.credentials = self.device.fcm_cred
         self.pullkin.persistent_ids = received_persistent_ids
@@ -207,8 +207,7 @@ class RaiffatherBase:
                 int(time.time()) + parsed_r.expires_in - 2,
             )
             return parsed_r
-        else:
-            raise ValueError(f"Status: {r.status_code}")
+        raise RaifErrorResponse(r)
 
     @async_property
     async def authorized_headers(self):
@@ -326,13 +325,8 @@ class RaiffatherBase:
             )
             if send_sms_response.status_code == 201:
                 return request_id
-            raise ValueError(
-                f"{send_sms_response.status_code} {send_sms_response.text}"
-            )
-        else:
-            raise ValueError(
-                f"{register_response.status_code} {register_response.text}"
-            )
+            raise RaifErrorResponse(send_sms_response)
+        raise RaifErrorResponse(register_response)
 
     async def register_device_verify(self, request_id: str, code: str):
         """
@@ -349,7 +343,7 @@ class RaiffatherBase:
         )
         if verify_response.status_code == 204:
             return True
-        return False
+        raise RaifErrorResponse(verify_response)
 
     @retry(
         stop=stop_after_attempt(2),
@@ -370,8 +364,7 @@ class RaiffatherBase:
         elif r.status_code == 401:
             await self._auth()
             raise RaifUnauthorized(r)
-        else:
-            raise ValueError(f"Status: {r.status_code}")
+        raise RaifErrorResponse(r)
 
     @retry(
         stop=stop_after_attempt(2),
@@ -388,6 +381,5 @@ class RaiffatherBase:
             return parsed_r
         elif r.status_code == 403:
             await self._auth()
-            raise RaifUnauthorized()
-        else:
-            raise ValueError(f"Status: {r.status_code}")
+            raise RaifUnauthorized(r)
+        raise RaifErrorResponse(r)
