@@ -8,6 +8,7 @@ import traceback
 from asyncio import Task
 from datetime import datetime, timedelta, timezone
 from ipaddress import IPv4Address, IPv4Network
+from pathlib import Path
 from random import choice, randint, randrange
 from string import hexdigits
 from typing import Optional
@@ -65,7 +66,10 @@ class RaiffatherBase:
         await self.__receiving_push
 
     async def _push_server(self):
-        persistent_path = f"{self.__app_dirs.user_data_dir}/{self.__app_name}/persistent_ids.txt"
+        filedir = f'{self.__app_dirs.user_data_dir}/{self.__app_name}'
+        persistent_path = f"{filedir}/persistent_ids.txt"
+        Path(filedir).mkdir(parents=True, exist_ok=True)
+
         with open(persistent_path, "a+") as f:
             received_persistent_ids = [x.strip() for x in f]
 
@@ -224,7 +228,9 @@ class RaiffatherBase:
     @property
     def device(self) -> DeviceInfo:
         if not self.__device_info:
-            filename = f'{self.__app_dirs.user_data_dir}/{self.__app_name}/raiffather_device_info.json'
+            filedir = f'{self.__app_dirs.user_data_dir}/{self.__app_name}'
+            filename = f'{filedir}/raiffather_device_info.json'
+            Path(filedir).mkdir(parents=True, exist_ok=True)
             if not os.path.exists(filename):
                 fcm_cred = self.pullkin.register(sender_id=self.__fcm_sender_id)
                 network = IPv4Network(f"192.168.0.0/16")
