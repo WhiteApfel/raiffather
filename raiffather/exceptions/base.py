@@ -8,9 +8,13 @@ class RaifException(Exception):
 class RaifErrorResponse(RaifException):
     def __new__(cls, response, *args, **kwargs):
         if response.status_code == 401:
-            return super(RaifErrorResponse, RaifUnauthorized).__new__(RaifUnauthorized, response, *args, **kwargs)
+            return super(RaifErrorResponse, RaifUnauthorized).__new__(
+                RaifUnauthorized, response, *args, **kwargs
+            )
         if response.status_code == 417:
-            return super(RaifErrorResponse, RaifIncrorrectRequest).__new__(RaifIncrorrectRequest, response, *args, **kwargs)
+            return super(RaifErrorResponse, RaifIncrorrectRequest).__new__(
+                RaifIncrorrectRequest, response, *args, **kwargs
+            )
         return super(RaifErrorResponse, cls).__new__(cls, response, *args, **kwargs)
 
     def __init__(self, response, *args, **kwargs):

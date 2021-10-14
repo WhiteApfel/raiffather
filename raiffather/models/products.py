@@ -141,13 +141,17 @@ class Accounts(BaseModel):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        elif str(item).isdigit() and len(str(item)) == 8:  # id, идентификатор счёта в райфе
+        elif (
+            str(item).isdigit() and len(str(item)) == 8
+        ):  # id, идентификатор счёта в райфе
             for a in self.accounts:
                 if a.id == int(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        elif str(item).isdigit() and len(str(item)) == 10:  # rma, хз что, но тоже, вроде, уникальное
+        elif (
+            str(item).isdigit() and len(str(item)) == 10
+        ):  # rma, хз что, но тоже, вроде, уникальное
             for a in self.accounts:
                 if a.rma == str(item):
                     found.append(a)
