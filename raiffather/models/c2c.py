@@ -91,6 +91,7 @@ class C2cCards(BaseModel):
                     found.append(c)
             if len(found) == 1:
                 return found[0]
+
         if found:
             raise RaifFoundMoreThanOneProduct(item, found, self.cards)
         raise RaifProductNotFound(item, self.cards)
