@@ -4,6 +4,8 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/whiteapfel/raiffather/badge/main)](https://www.codefactor.io/repository/github/whiteapfel/raiffather/overview/main)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FWhiteApfel%2Fraiffather.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FWhiteApfel%2Fraiffather?ref=badge_shield)
 [![DeepSource](https://deepsource.io/gh/WhiteApfel/raiffather.svg/?label=active+issues&show_trend=true&token=YEVqOQuUg7C6E3vweLGD883l)](https://deepsource.io/gh/WhiteApfel/raiffather/?ref=repository-badge)
+[![Updates](https://pyup.io/repos/github/WhiteApfel/raiffather/shield.svg)](https://pyup.io/repos/github/WhiteApfel/raiffather/)
+[![Python 3](https://pyup.io/repos/github/WhiteApfel/raiffather/python-3-shield.svg)](https://pyup.io/repos/github/WhiteApfel/raiffather/)
 
 ### Введение
 
