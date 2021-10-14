@@ -2,6 +2,7 @@ from typing import Union
 
 from loguru import logger
 
+from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.c2c import (
     C2cInit,
     E3DSOTPData,
@@ -32,8 +33,7 @@ class RaiffatherC2C(RaiffatherBase):
                 f"C2C prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
             return True
-        else:
-            raise ValueError(f"{r.status_code} {r.text}")
+        raise RaifErrorResponse(r)
 
     async def c2c_retrieve(self):
         """
@@ -50,12 +50,8 @@ class RaiffatherC2C(RaiffatherBase):
                 f"C2C retrieved initial data successfully. {r.request.method}: {r.url} -> "
                 f"{r.status_code}: {r.text}"
             )
-            try:
-                return C2cRetrieve(**r.json())
-            except Exception as e:
-                print(e)
-        else:
-            raise ValueError(f"{r.status_code} {r.text}")
+            return C2cRetrieve(**r.json())
+        raise RaifErrorResponse(r)
 
     async def c2c_fees(
         self,
@@ -104,8 +100,7 @@ class RaiffatherC2C(RaiffatherBase):
                 f"{r.status_code}: {r.text}"
             )
             return r.json()
-        else:
-            raise ValueError(f"{r.status_code} {r.text}")
+        raise RaifErrorResponse(r)
 
     async def c2c_init(
         self,
@@ -153,13 +148,12 @@ class RaiffatherC2C(RaiffatherBase):
                 f"{r.status_code}: {r.text}"
             )
             return C2cInit(**r.json())
-        else:
-            logger.critical(
-                f"C2C initialization failed. {r.request.method}: {r.url} -> "
-                f"{r.status_code}: {r.text}\nRequest headers: {r.request.headers}\n"
-                f"Request content:\n{r.request.content}"
-            )
-            raise ValueError(f"{r.status_code} {r.text}")
+        logger.critical(
+            f"C2C initialization failed. {r.request.method}: {r.url} -> "
+            f"{r.status_code}: {r.text}\nRequest headers: {r.request.headers}\n"
+            f"Request content:\n{r.request.content}"
+        )
+        raise RaifErrorResponse(r)
 
     async def c2c_e3ds_start(self, request_id):
         """
@@ -198,8 +192,7 @@ class RaiffatherC2C(RaiffatherBase):
         )
         if r.status_code == 200:
             return r.text
-        else:
-            raise ValueError(f"{r.status_code} {r.text}")
+        raise RaifErrorResponse(r)
 
     async def c2c_e3ds_verify(self, request_id, pares):
         data = {
@@ -212,41 +205,7 @@ class RaiffatherC2C(RaiffatherBase):
         )
         if r.status_code == 200:
             return True
-        else:
-            raise ValueError(f"{r.status_code} {r.text}")
-
-    async def c2c(self, amount: Union[float, int]):
-        """
-        Общий метод для полноценного проведения операции по всем этапам
-
-        Надо деить. Мне лень. Там муторно со счетами. Лучше сначала СБП замучулькаю
-        :param amount:
-        :return:
-        """
-        data = {
-            "amount": {"currency": 643, "sum": 50.0},
-            "commission": {"currency": 810, "sum": 50.0},
-            "dst": {"pan": "5321304044087960", "type": "pan"},
-            "salary": False,
-            "src": {"cardId": 83159519, "type": "cardId"},
-        }
-        r = await self._client.post(
-            "https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer",
-            headers=await self.authorized_headers,
-            json=data,
-        )
-        if r.status_code == 200:
-            rjson = r.json()
-            request_id = rjson["requestId"]
-            data2 = {"deviceUid": self.device.uid, "pushId": self.device.push}
-            r2 = await self._client.post(
-                f"https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer/{request_id}/PUSHOTP",
-                json=data2,
-                headers=await self.authorized_headers,
-            )
-            if r2.status_code == 200:
-                push_id = r2.json()["pushId"]
-                otp = self.wait_code(push_id)
+        raise RaifErrorResponse(r)
 
     async def c2c_bin_info(self, bin):
         r = await self._client.get(
@@ -255,5 +214,4 @@ class RaiffatherC2C(RaiffatherBase):
         )
         if r.status_code == 200:
             return BinInfo(**r.json())
-        else:
-            raise ValueError(f"{r.status_code} {r.text}")
+        raise RaifErrorResponse(r)
