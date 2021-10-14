@@ -31,8 +31,7 @@ class RaiffatherTransactions(RaiffatherBase):
             return Transactions(**transactions_response.json())
         elif transactions_response.status_code == 401:
             raise RaifUnauthorized(transactions_response)
-        else:
-            raise RaifErrorResponse(transactions_response)
+        raise RaifErrorResponse(transactions_response)
 
     async def global_history_generator(self) -> AsyncGenerator[Transaction, None]:
         """
