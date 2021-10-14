@@ -19,5 +19,4 @@ class RaiffatherSettings(RaiffatherBase):
         )
         if settings_response.status_code == 200:
             return True
-        else:
-            raise RaifErrorResponse(settings_response)
+        raise RaifErrorResponse(settings_response)
