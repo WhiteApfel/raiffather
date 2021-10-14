@@ -28,8 +28,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
             return True
-        else:
-            raise RaifErrorResponse(r)
+        raise RaifErrorResponse(r)
 
     async def internal_transfer_accounts_source(self):
         r = await self._client.get(
@@ -41,8 +40,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
             return Accounts(accounts=r.json())
-        else:
-            raise RaifErrorResponse(r)
+        raise RaifErrorResponse(r)
 
     async def internal_transfer_accounts_destination(self):
         r = await self._client.get(
@@ -54,8 +52,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
             return Accounts(accounts=r.json())
-        else:
-            raise RaifErrorResponse(r)
+        raise RaifErrorResponse(r)
 
     async def internal_transfer_init(
         self,
@@ -85,12 +82,8 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             logger.debug(
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
-            try:
-                return InternalTransferInit(**r.json())
-            except Exception as e:
-                print(e)
-        else:
-            raise RaifErrorResponse(r)
+            return InternalTransferInit(**r.json())
+        raise RaifErrorResponse(r)
 
     async def internal_transfer_verify_stub(self, request_id):
         headers = await self.authorized_headers
@@ -104,8 +97,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
                 f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
             )
             return True
-        else:
-            raise RaifErrorResponse(r)
+        raise RaifErrorResponse(r)
 
     async def internal_transfer_send_push(self, request_id) -> str:
         """
@@ -125,8 +117,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             push_id = send_code_response.json()["pushId"]
             otp = await self.wait_code(push_id)
             return otp
-        else:
-            raise RaifErrorResponse(send_code_response)
+        raise RaifErrorResponse(send_code_response)
 
     async def internal_transfer_push_verify(self, request_id, code) -> bool:
         """
@@ -143,8 +134,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         )
         if verify_response.status_code == 204:
             return True
-        else:
-            raise RaifErrorResponse(verify_response)
+        raise RaifErrorResponse(verify_response)
 
     async def internal_transfer_exchange_rate(
         self, amount=1.0, src="RUR", dst="USD", in_src_currency=False, scope=4
@@ -161,5 +151,4 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         )
         if rate_response.status_code == 200:
             return InternalTransferExchangeRate(**rate_response.json())
-        else:
-            raise RaifErrorResponse(rate_response)
+        raise RaifErrorResponse(rate_response)
