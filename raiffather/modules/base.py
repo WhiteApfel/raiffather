@@ -378,7 +378,6 @@ class RaiffatherBase:
             parsed_r = Products(**r.json())
             self.products = parsed_r
             return parsed_r
-        elif r.status_code == 403:
+        if r.status_code == 403:
             await self._auth()
-            raise RaifUnauthorized(r)
         raise RaifErrorResponse(r)
