@@ -34,11 +34,10 @@ class Account(BaseModel):
             return self.balance < other.balance
         elif type(other) in [int, float]:
             return self.balance < other
-        else:
-            raise ValueError(
-                f"Objects are compared by balance. "
-                f"Cannot be compared to anything other than a int, float or other Account instance"
-            )
+        raise ValueError(
+            f"Objects are compared by balance. "
+            f"Cannot be compared to anything other than a int, float or other Account instance"
+        )
 
 
 class Card(BaseModel):
@@ -73,11 +72,10 @@ class Card(BaseModel):
             return self.balance < other.balance
         elif type(other) in [int, float]:
             return self.balance < other
-        else:
-            raise ValueError(
-                f"Objects are compared by balance. "
-                f"Cannot be compared to anything other than a int, float or other Card instance"
-            )
+        raise ValueError(
+            f"Objects are compared by balance. "
+            f"Cannot be compared to anything other than a int, float or other Card instance"
+        )
 
 
 class Cards(BaseModel):
@@ -118,10 +116,9 @@ class Cards(BaseModel):
             found = []
         if len(found) == 0:
             raise KeyError(f"Not found {item} in cards ({len(self.cards)})")
-        else:
-            raise KeyError(
-                f"Found more then one card with item {item} in cards ({len(self.cards)})"
-            )
+        raise KeyError(
+            f"Found more then one card with item {item} in cards ({len(self.cards)})"
+        )
 
     @property
     def visa(self):
@@ -170,10 +167,9 @@ class Accounts(BaseModel):
             found = []
         if len(found) == 0:
             raise KeyError(f"Not found {item} in accounts ({len(self.accounts)})")
-        else:
-            raise KeyError(
-                f"Found more then one account with item {item} in accounts ({len(self.accounts)})"
-            )
+        raise KeyError(
+            f"Found more then one account with item {item} in accounts ({len(self.accounts)})"
+        )
 
     def __len__(self):
         return len(self.accounts)
