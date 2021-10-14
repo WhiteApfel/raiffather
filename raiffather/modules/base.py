@@ -369,7 +369,7 @@ class RaiffatherBase:
             return parsed_r
         elif r.status_code == 401:
             await self._auth()
-            raise RaifUnauthorized()
+            raise RaifUnauthorized(r)
         else:
             raise ValueError(f"Status: {r.status_code}")
 
