@@ -84,7 +84,7 @@ class Cards(BaseModel):
     def __getitem__(self, item):
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
-        elif len(str(item)) == 8:  # id, идентификатор карты в райфе
+        elif str(item).isdigit() and len(str(item)) == 8:  # id, идентификатор карты в райфе
             found = []
             for a in self.cards:
                 if a.id == int(item):
@@ -98,7 +98,7 @@ class Cards(BaseModel):
                         found.append(a)
                 if len(found) == 1:
                     return found[0]
-        elif len(str(item)) == 4:
+        elif str(item).isdigit() and len(str(item)) == 4:
             found = []
             for a in self.cards:
                 if a.pan[-4:] == str(item):
@@ -135,21 +135,21 @@ class Accounts(BaseModel):
     def __getitem__(self, item):
         if type(item) is int and item < len(self.accounts):
             return self.accounts[item]
-        elif len(str(item)) == 20:  # cba, номер счёта
+        elif str(item).isdigit() and len(str(item)) == 20:  # cba, номер счёта
             found = []
             for a in self.accounts:
                 if a.cba == str(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        elif len(str(item)) == 8:  # id, идентификатор счёта в райфе
+        elif str(item).isdigit() and len(str(item)) == 8:  # id, идентификатор счёта в райфе
             found = []
             for a in self.accounts:
                 if a.id == int(item):
                     found.append(a)
             if len(found) == 1:
                 return found[0]
-        elif len(str(item)) == 10:  # rma, хз что, но тоже, вроде, уникальное
+        elif str(item).isdigit() and len(str(item)) == 10:  # rma, хз что, но тоже, вроде, уникальное
             found = []
             for a in self.accounts:
                 if a.rma == str(item):
