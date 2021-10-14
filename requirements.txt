@@ -9,3 +9,4 @@ ipaddress~=1.0.23
 httpx~=0.18.2
 randmac~=0.1
 tenacity~=8.0.1
+appdirs~=1.4.4
