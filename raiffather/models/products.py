@@ -143,6 +143,18 @@ class Cards(BaseModel):
 class Accounts(BaseModel):
     accounts: list[Account]
 
+    def get_by_id(self, account_id):
+        return [a for a in self.accounts if a.id == int(account_id)]
+
+    def get_by_cba(self, cba):
+        return [a for a in self.accounts if a.cba == str(cba)]
+
+    def get_by_rma(self, rma):
+        return [a for a in self.accounts if a.rma == str(rma)]
+
+    def get_by_name(self, name):
+        return [a for a in self.accounts if a.id == str(name)]
+
     def __getitem__(self, item):
         found = []
         if type(item) is int and item < len(self.accounts):
