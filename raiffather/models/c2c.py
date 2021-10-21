@@ -83,23 +83,20 @@ class C2cCards(BaseModel):
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
         if len(str(item)) == 8:
-            for c in self.cards:
-                if c.card.id == int(item):
-                    found.append(c)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_id(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
         elif len(str(item)) == 4:
-            for c in self.cards:
-                if c.card.pan[-4:] == str(item):
-                    found.append(c)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_last_digits(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
         if len(found) == 0 and type(item) is str:
-            for c in self.cards:
-                if c.card.name == str(item):
-                    found.append(c)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_name(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
 
         if found:
             raise RaifFoundMoreThanOneProduct(item, found, self.cards)
@@ -130,23 +127,20 @@ class C2cTpc(BaseModel):
         if type(item) is int and item < len(self.cards):
             return self.cards[item]
         if len(str(item)) == 6:
-            for c in self.cards:
-                if c.id == int(item):
-                    found.append(c)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_id(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
         elif len(str(item)) == 4:
-            for c in self.cards:
-                if c.last_digits == int(item):
-                    found.append(c)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_last_digits(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
         if len(found) == 0 and type(item) is str:
-            for c in self.cards:
-                if c.name == str(item):
-                    found.append(c)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_name(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
 
         if found:
             raise RaifFoundMoreThanOneProduct(item, found, self.cards)
