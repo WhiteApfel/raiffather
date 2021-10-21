@@ -101,31 +101,27 @@ class Cards(BaseModel):
 
         # id, идентификатор карты в райфе
         if str(item).isdigit() and len(str(item)) == 8:
-            for a in self.cards:
-                if a.id == int(item):
-                    found.append(a)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_id(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
 
             # icdb_id, хз что, но тоже, вроде, уникальное и на 8 цифр
-            if len(found) == 0:
-                for a in self.cards:
-                    if a.icdb_id == str(item):
-                        found.append(a)
-                if len(found) == 1:
-                    return found[0]
+            if len(cards) == 0:
+                cards = self.get_by_icdb_id(item)
+                if len(cards) == 1:
+                    return cards[0]
+                found.extend(cards)
         elif str(item).isdigit() and len(str(item)) == 4:
-            for a in self.cards:
-                if a.pan[-4:] == str(item):
-                    found.append(a)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_last_digits(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
         if len(found) == 0 and type(item) is str:  # name, название счёта
-            for a in self.cards:
-                if a.name == str(item):
-                    found.append(a)
-            if len(found) == 1:
-                return found[0]
+            cards = self.get_by_name(item)
+            if len(cards) == 1:
+                return cards[0]
+            found.extend(cards)
 
         if found:
             raise RaifFoundMoreThanOneProduct(item, found, self.cards)
