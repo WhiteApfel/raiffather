@@ -82,6 +82,18 @@ class Card(BaseModel):
 class Cards(BaseModel):
     cards: list[Card]
 
+    def get_by_id(self, card_id):
+        return [c for c in self.cards if c.id == int(card_id)]
+
+    def get_by_icdb_id(self, icdb_id):
+        return [c for c in self.cards if c.icdb_id == str(icdb_id)]
+
+    def get_by_last_digits(self, last_digits):
+        return [c for c in self.cards if c.pan[-4:] == str(last_digits)[-4:]]
+
+    def get_by_name(self, name):
+        return [c for c in self.cards if c.name == str(name)]
+
     def __getitem__(self, item):
         found = []
         if type(item) is int and item < len(self.cards):
