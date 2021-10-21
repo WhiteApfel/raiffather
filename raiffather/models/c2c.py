@@ -69,6 +69,15 @@ class C2cCards(BaseModel):
         for a in self.cards:
             yield a
 
+    def get_by_id(self, card_id):
+        return [c for c in self.cards if c.card.id == int(card_id)]
+
+    def get_by_last_digits(self, last_digits):
+        return [c for c in self.cards if c.card.pan[-4:] == str(last_digits)[-4:]]
+
+    def get_by_name(self, name):
+        return [c for c in self.cards if c.card.name == str(name)]
+
     def __getitem__(self, item):
         found = []
         if type(item) is int and item < len(self.cards):
