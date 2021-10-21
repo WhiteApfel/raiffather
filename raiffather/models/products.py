@@ -156,33 +156,29 @@ class Accounts(BaseModel):
         if type(item) is int and item < len(self.accounts):
             return self.accounts[item]
         if str(item).isdigit() and len(str(item)) == 20:  # cba, номер счёта
-            for a in self.accounts:
-                if a.cba == str(item):
-                    found.append(a)
-            if len(found) == 1:
-                return found[0]
+            accounts = self.get_by_cba(item)
+            if len(accounts) == 1:
+                return accounts[0]
+            found.extend(accounts)
         elif (
             str(item).isdigit() and len(str(item)) == 8
         ):  # id, идентификатор счёта в райфе
-            for a in self.accounts:
-                if a.id == int(item):
-                    found.append(a)
-            if len(found) == 1:
-                return found[0]
+            accounts = self.get_by_id(item)
+            if len(accounts) == 1:
+                return accounts[0]
+            found.extend(accounts)
         elif (
             str(item).isdigit() and len(str(item)) == 10
         ):  # rma, хз что, но тоже, вроде, уникальное
-            for a in self.accounts:
-                if a.rma == str(item):
-                    found.append(a)
-            if len(found) == 1:
-                return found[0]
+            accounts = self.get_by_rma(item)
+            if len(accounts) == 1:
+                return accounts[0]
+            found.extend(accounts)
         if len(found) == 0 and type(item) is str:  # name, название счёта
-            for a in self.accounts:
-                if a.name == str(item):
-                    found.append(a)
-            if len(found) == 1:
-                return found[0]
+            accounts = self.get_by_name(item)
+            if len(accounts) == 1:
+                return accounts[0]
+            found.extend(accounts)
 
         if found:
             raise RaifFoundMoreThanOneProduct(item, found, self.accounts)
