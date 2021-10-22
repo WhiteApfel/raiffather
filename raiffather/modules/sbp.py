@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from fuzzywuzzy import process
 from loguru import logger
@@ -96,7 +96,7 @@ class RaiffatherSBP(RaiffatherBase):
         raise RaifErrorResponse(comission_response)
 
     async def sbp_init(
-        self, amount, bank, phone, message=None, cba: str = None
+        self, amount: Union[float, int], bank: Union[str, int], phone: str, message=None, cba: str = None
     ) -> SbpInit:
         """
         Ещё один этап для проведения перевода по СБП
@@ -110,7 +110,7 @@ class RaiffatherSBP(RaiffatherBase):
         """
         data = {
             "amount": float(amount),
-            "bankId": bank,
+            "bankId": int(bank),
             # "commission": 0.0,
             # "currency": "810",
             "message": message or "",
@@ -166,7 +166,7 @@ class RaiffatherSBP(RaiffatherBase):
         """
         return process.extractOne(bank, banks)[0]
 
-    async def sbp_send_push(self, request_id) -> str:
+    async def sbp_send_push(self, request_id: Union[str, int]) -> str:
         """
         Отправляет пуш-уведомление для подтверждение и ждёт, когда пуш-сервер его получит
 
@@ -186,7 +186,7 @@ class RaiffatherSBP(RaiffatherBase):
             return otp
         raise RaifErrorResponse(send_code_response)
 
-    async def sbp_push_verify(self, request_id, code) -> bool:
+    async def sbp_push_verify(self, request_id: Union[str, int], code: Union[str, int]) -> bool:
         """
         Проверяет код подтверждения
 
@@ -197,13 +197,13 @@ class RaiffatherSBP(RaiffatherBase):
         verify_response = await self._client.put(
             f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push",
             headers=await self.authorized_headers,
-            json={"code": code},
+            json={"code": str(code)},
         )
         if verify_response.status_code == 204:
             return True
         raise RaifErrorResponse(verify_response)
 
-    async def sbp(self, phone, bank, amount, comment=None):
+    async def sbp(self, phone: str, bank: str, amount: Union[float, int], comment=None):
         """
         Единый метод для автоматического проведения всего перевода
 
