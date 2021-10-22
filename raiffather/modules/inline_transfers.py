@@ -132,7 +132,9 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             return otp
         raise RaifErrorResponse(send_code_response)
 
-    async def internal_transfer_push_verify(self, request_id: Union[str, int], code: Union[str, int]) -> bool:
+    async def internal_transfer_push_verify(
+        self, request_id: Union[str, int], code: Union[str, int]
+    ) -> bool:
         """
         Проверяет код подтверждения и подтверждает намерение на перевод
 
@@ -150,7 +152,12 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         raise RaifErrorResponse(verify_response)
 
     async def internal_transfer_exchange_rate(
-        self, amount: Union[float, int] = 1.0, src: str = "RUR", dst: str = "USD", in_src_currency:bool = False, scope: int = 4
+        self,
+        amount: Union[float, int] = 1.0,
+        src: str = "RUR",
+        dst: str = "USD",
+        in_src_currency: bool = False,
+        scope: int = 4,
     ):
         """
         Расчёт курса обмена валюты

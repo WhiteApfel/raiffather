@@ -16,7 +16,9 @@ class RaiffatherSbpQR(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def sbp_qr_pay_init(self, amount: Union[float, int], src: Account, qr_data: SbpQRData):
+    async def sbp_qr_pay_init(
+        self, amount: Union[float, int], src: Account, qr_data: SbpQRData
+    ):
         data = {
             "amount": float(amount),
             "bankId": qr_data.bank_id,
@@ -56,7 +58,9 @@ class RaiffatherSbpQR(RaiffatherBase):
             return otp
         raise RaifErrorResponse(send_code_response)
 
-    async def sbp_qr_push_verify(self, request_id: Union[str, int], code: Union[str, int]) -> bool:
+    async def sbp_qr_push_verify(
+        self, request_id: Union[str, int], code: Union[str, int]
+    ) -> bool:
         """
         Проверяет код подтверждения
 

@@ -96,7 +96,12 @@ class RaiffatherSBP(RaiffatherBase):
         raise RaifErrorResponse(comission_response)
 
     async def sbp_init(
-        self, amount: Union[float, int], bank: Union[str, int], phone: str, message=None, cba: str = None
+        self,
+        amount: Union[float, int],
+        bank: Union[str, int],
+        phone: str,
+        message=None,
+        cba: str = None,
     ) -> SbpInit:
         """
         Ещё один этап для проведения перевода по СБП
@@ -186,7 +191,9 @@ class RaiffatherSBP(RaiffatherBase):
             return otp
         raise RaifErrorResponse(send_code_response)
 
-    async def sbp_push_verify(self, request_id: Union[str, int], code: Union[str, int]) -> bool:
+    async def sbp_push_verify(
+        self, request_id: Union[str, int], code: Union[str, int]
+    ) -> bool:
         """
         Проверяет код подтверждения
 
