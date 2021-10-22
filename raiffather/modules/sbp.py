@@ -116,7 +116,7 @@ class RaiffatherSBP(RaiffatherBase):
             "message": message or "",
             "phone": phone,
             "recipient": "",
-            "srcAccountId": self._products.accounts[0].id,
+            "srcAccountId": self.products.accounts[0].id,
             "srcCba": cba or (await self.sbp_settings()).cba,
             "template": False,
         }
