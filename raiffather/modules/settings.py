@@ -3,7 +3,7 @@ from raiffather.modules.base import RaiffatherBase
 
 
 class RaiffatherSettings(RaiffatherBase):
-    async def set_sbp_settings(self, allow, cba):
+    async def set_sbp_settings(self, allow: bool, cba: str):
         """
         Позволяет обновить настройки СБП. Например, привязать другой счёт или включить/отключить приём переводов в Райф
 
