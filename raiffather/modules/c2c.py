@@ -178,10 +178,10 @@ class RaiffatherC2C(RaiffatherBase):
             return E3DSOTPData(**e3dsotp_response.json())
         raise RaifErrorResponse(e3dsotp_response)
 
-    async def c2c_e3ds_pareq(self, acs_url: str, pareq: str):
+    async def c2c_e3ds_pareq(self, acs_url: str, pareq: str, term_url: str = None):
         data = {
             "MD": "",
-            "TermUrl": "https://imobile.raiffeisen.ru/3ds/1400474370",
+            "TermUrl": term_url or "https://imobile.raiffeisen.ru/3ds/1400474370",
             "PaReq": pareq,
         }
         r = await self._client.post(
