@@ -155,7 +155,7 @@ class RaiffatherC2C(RaiffatherBase):
         )
         raise RaifErrorResponse(r)
 
-    async def c2c_e3ds_start(self, request_id):
+    async def c2c_e3ds_start(self, request_id: Union[str, int]):
         """
         Получение данных для перенаправления на 3DS
 
@@ -178,7 +178,7 @@ class RaiffatherC2C(RaiffatherBase):
             return E3DSOTPData(**e3dsotp_response.json())
         raise RaifErrorResponse(e3dsotp_response)
 
-    async def c2c_e3ds_pareq(self, acs_url, pareq):
+    async def c2c_e3ds_pareq(self, acs_url: str, pareq: str):
         data = {
             "MD": "",
             "TermUrl": "https://imobile.raiffeisen.ru/3ds/1400474370",
@@ -193,7 +193,7 @@ class RaiffatherC2C(RaiffatherBase):
             return r.text
         raise RaifErrorResponse(r)
 
-    async def c2c_e3ds_verify(self, request_id, pares):
+    async def c2c_e3ds_verify(self, request_id: Union[str, int], pares: str):
         data = {
             "pares": pares,
         }
@@ -206,7 +206,7 @@ class RaiffatherC2C(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def c2c_bin_info(self, card_bin):
+    async def c2c_bin_info(self, card_bin: Union[str, int]):
         r = await self._client.get(
             f"https://amobile.raiffeisen.ru/rest/transfer/c2c/bin/{card_bin}",
             headers=await self.authorized_headers,
