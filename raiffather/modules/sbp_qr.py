@@ -1,4 +1,7 @@
+from typing import Union
+
 from raiffather.exceptions.base import RaifErrorResponse
+from raiffather.models.products import Account
 from raiffather.models.sbp_qr import SbpQRData, SbpQRInit, SbpQrInfo
 from raiffather.modules.base import RaiffatherBase
 
@@ -13,7 +16,7 @@ class RaiffatherSbpQR(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def sbp_qr_pay_init(self, amount, src, qr_data: SbpQRData):
+    async def sbp_qr_pay_init(self, amount: Union[float, int], src: Account, qr_data: SbpQRData):
         data = {
             "amount": float(amount),
             "bankId": qr_data.bank_id,
@@ -33,7 +36,7 @@ class RaiffatherSbpQR(RaiffatherBase):
             return SbpQRInit(**r.json())
         raise RaifErrorResponse(r)
 
-    async def sbp_qr_send_push(self, request_id) -> str:
+    async def sbp_qr_send_push(self, request_id: Union[str, int]) -> str:
         """
         Отправляет пуш-уведомление для подтверждение и ждёт, когда пуш-сервер его получит
 
@@ -53,7 +56,7 @@ class RaiffatherSbpQR(RaiffatherBase):
             return otp
         raise RaifErrorResponse(send_code_response)
 
-    async def sbp_qr_push_verify(self, request_id, code) -> bool:
+    async def sbp_qr_push_verify(self, request_id: Union[str, int], code: Union[str, int]) -> bool:
         """
         Проверяет код подтверждения
 
@@ -64,13 +67,13 @@ class RaiffatherSbpQR(RaiffatherBase):
         verify_response = await self._client.put(
             f"https://amobile.raiffeisen.ru/dailybanking/ro/v1.0/c2b/process/transfer/{request_id}/push",
             headers=await self.authorized_headers,
-            json={"code": code},
+            json={"code": str(code)},
         )
         if verify_response.status_code == 204:
             return True
         raise RaifErrorResponse(verify_response)
 
-    async def sbp_qr_decode_url(self, url):
+    async def sbp_qr_decode_url(self, url: str):
         data = {"scanCodeType": 3, "scanString": url}
         r = await self._client.post(
             "https://amobile.raiffeisen.ru/rest/1/qr",
