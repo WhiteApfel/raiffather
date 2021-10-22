@@ -59,8 +59,18 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         amount: Union[float, int],
         src: Union[str, int, Account],
         dst: Union[str, int, Account],
-        source_currency=True,
+        source_currency: bool = True,
     ):
+        """
+        Инициализирует намерение перевода между счетами.
+        В ответе содержит список методов подтверждения.
+
+        :param amount: сумма перевода
+        :param src: какой-либо идентификатор счёта-отправителя: id, cba, rma или название
+        :param dst: какой-либо идентификатор счёта-получателя: id, cba, rma или название
+        :param source_currency: True, если сумма указана в валюте счёта получателя
+        :return:
+        """
         if type(src) in [int, str]:
             src = self.products.accounts[src]
         if type(dst) in [int, str]:
@@ -85,7 +95,10 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             return InternalTransferInit(**r.json())
         raise RaifErrorResponse(r)
 
-    async def internal_transfer_verify_stub(self, request_id):
+    async def internal_transfer_verify_stub(self, request_id: Union[str, int]):
+        """
+        Подтверждение намерения для проведения перевода
+        """
         headers = await self.authorized_headers
         headers.update({"Content-Type": "application/json"})
         r = await self._client.put(
@@ -99,7 +112,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def internal_transfer_send_push(self, request_id) -> str:
+    async def internal_transfer_send_push(self, request_id: Union[str, int]) -> str:
         """
         Отправляет пуш-уведомление для подтверждение и ждёт, когда пуш-сервер его получит
 
@@ -119,9 +132,9 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             return otp
         raise RaifErrorResponse(send_code_response)
 
-    async def internal_transfer_push_verify(self, request_id, code) -> bool:
+    async def internal_transfer_push_verify(self, request_id: Union[str, int], code: Union[str, int]) -> bool:
         """
-        Проверяет код подтверждения
+        Проверяет код подтверждения и подтверждает намерение на перевод
 
         :param request_id: номер заявки
         :param code: код подтверждения
@@ -130,15 +143,25 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         verify_response = await self._client.put(
             f"https://amobile.raiffeisen.ru/rest/1/transfer/internal/{request_id}/push",
             headers=await self.authorized_headers,
-            json={"code": code},
+            json={"code": str(code)},
         )
         if verify_response.status_code == 204:
             return True
         raise RaifErrorResponse(verify_response)
 
     async def internal_transfer_exchange_rate(
-        self, amount=1.0, src="RUR", dst="USD", in_src_currency=False, scope=4
+        self, amount: Union[float, int] = 1.0, src: str = "RUR", dst: str = "USD", in_src_currency:bool = False, scope: int = 4
     ):
+        """
+        Расчёт курса обмена валюты
+
+        :param amount: сумма для обмена
+        :param src: валюта отправителя
+        :param dst: валюта получателя
+        :param in_src_currency: True, если в валюте отправителя
+        :param scope: хз что, не надо трогать
+        :return:
+        """
         params = {
             "currencySource": src,
             "currencyDest": dst,
