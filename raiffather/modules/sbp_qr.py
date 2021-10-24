@@ -17,7 +17,7 @@ class RaiffatherSbpQR(RaiffatherBase):
         raise RaifErrorResponse(r)
 
     async def sbp_qr_pay_init(
-        self, amount: Union[float, int], src: Account, qr_data: SbpQRData
+        self, amount: Union[float, int], src: Union[Account, str, int], qr_data: SbpQRData
     ):
         data = {
             "amount": float(amount),
@@ -25,7 +25,7 @@ class RaiffatherSbpQR(RaiffatherBase):
             "crc": qr_data.crc,
             "qrc_id": qr_data.qrc,
             "qrcType": qr_data.qrc_type,
-            "srcCba": src.cba,
+            "srcCba": src if type(src) is Account else self.products.accounts[src],
             "currency": "RUB",
             "paymentPurpose": "",
         }
