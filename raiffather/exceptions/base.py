@@ -67,3 +67,8 @@ class RaifFoundMoreThanOneProduct(RaifException):
 class RaifPasswordDeprecated(RaifErrorResponse):
     def __init__(self, response, *args, **kwargs):
         super().__init__(*args, response, *kwargs)
+
+
+class RaifValueError(ValueError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
