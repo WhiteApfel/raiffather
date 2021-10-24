@@ -25,4 +25,6 @@ class RaiffatherSettings(RaiffatherBase):
             if settings_response.status_code == 200:
                 return True
             raise RaifErrorResponse(settings_response)
-        raise RaifValueError("Account currency must be RUR (ruble). It requires a central bank")
+        raise RaifValueError(
+            "Account currency must be RUR (ruble). It requires a central bank"
+        )
