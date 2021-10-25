@@ -52,18 +52,25 @@ class RaiffatherBase:
         self.__receiving_push: Task = None
 
     async def __aenter__(self):
-        if not self.products:
-            self.products = await self.get_products()
-        self.__receiving_push = asyncio.get_event_loop().create_task(
-            self._push_server()
-        )
-        return self
+        try:
+            failed = True
+            if not self.products:
+                self.products = await self.get_products()
+            self.__receiving_push = asyncio.get_event_loop().create_task(
+                self._push_server()
+            )
+            failed = False
+            return self
+        finally:
+            if failed:
+                await self.__aexit__()
 
     async def __aexit__(self, *args):
         await self.pullkin.close()
         await self.__client.aclose()
-        self.__receiving_push.cancel()
-        await self.__receiving_push
+        if self.__receiving_push:
+            self.__receiving_push.cancel()
+            await self.__receiving_push
 
     async def _push_server(self):
         filedir = f"{self.__app_dirs.user_data_dir}/{self.__app_name}"
