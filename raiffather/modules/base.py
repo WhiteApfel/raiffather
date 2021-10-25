@@ -156,8 +156,6 @@ class RaiffatherBase:
             ...
         except ConnectionResetError:
             ...
-        except Exception:
-            print(traceback.format_exc())
 
     async def wait_code(self, push_id):
         x = 0
