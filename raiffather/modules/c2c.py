@@ -23,7 +23,7 @@ class RaiffatherC2C(RaiffatherBase):
         Подготавливает к проведению перевода по номеру карты, обязательный пунктик
         :return: bool
         """
-        logger.debug(f"C2C prepare...")
+        logger.debug("C2C prepare...")
         r = await self._client.get(
             "https://e-commerce.raiffeisen.ru/c2c/v2.0/transfer",
             headers=await self.authorized_headers,
@@ -40,7 +40,7 @@ class RaiffatherC2C(RaiffatherBase):
         Подготавливает к проведению перевода по номеру карты, обязательный пунктик
         :return: bool
         """
-        logger.debug(f"C2C retrieve initial data...")
+        logger.debug("C2C retrieve initial data...")
         r = await self._client.get(
             "https://e-commerce.raiffeisen.ru/c2c/v2.0/retrieveInitialData",
             headers=await self.authorized_headers,
