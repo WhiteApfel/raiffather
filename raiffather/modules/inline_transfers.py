@@ -18,7 +18,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         Подготавливает к проведению перевода между счетами
         :return: bool
         """
-        logger.debug(f"Internal transfer prepare...")
+        logger.debug("Internal transfer prepare...")
         r = await self._client.get(
             "https://amobile.raiffeisen.ru/rest/1/transfer/internal",
             headers=await self.authorized_headers,
@@ -177,7 +177,7 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             "scope": scope,
         }
         rate_response = await self._client.get(
-            f"https://amobile.raiffeisen.ru/rest/exchange/rate", params=params
+            "https://amobile.raiffeisen.ru/rest/exchange/rate", params=params
         )
         if rate_response.status_code == 200:
             return InternalTransferExchangeRate(**rate_response.json())

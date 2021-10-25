@@ -105,7 +105,7 @@ class RaiffatherBase:
                     "syncToken": "null",
                 }
                 messages_response = await self._client.post(
-                    f"https://pushserver.mfms.ru/raif/service/getMessages",
+                    "https://pushserver.mfms.ru/raif/service/getMessages",
                     headers=mfms_h,
                     data=mfms_data,
                 )
@@ -133,7 +133,7 @@ class RaiffatherBase:
                 }
                 if messages:
                     verify_received_response = await self._client.post(
-                        f"https://pushserver.mfms.ru/raif/service/messagesReceived",
+                        "https://pushserver.mfms.ru/raif/service/messagesReceived",
                         headers=mfms_h,
                         data=mfms_data,
                     )
@@ -238,7 +238,7 @@ class RaiffatherBase:
             Path(filedir).mkdir(parents=True, exist_ok=True)
             if not os.path.exists(filename):
                 fcm_cred = self.pullkin.register(sender_id=self.__fcm_sender_id)
-                network = IPv4Network(f"192.168.0.0/16")
+                network = IPv4Network("192.168.0.0/16")
                 random_ip = IPv4Address(
                     randrange(
                         int(network.network_address) + 1,
