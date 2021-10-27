@@ -320,7 +320,7 @@ class RaiffatherBase:
         data = {
             "otp": {
                 "deviceName": f"{self.device.model} "
-                              f"{datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M')}",
                 "deviceUid": self.device.uid,
                 "fingerPrint": self.device.fingerprint,
                 "pushId": self.device.push,
