@@ -82,8 +82,8 @@ class RaiffatherBase:
 
         @self.pullkin.on_notification()
         async def on_notification(
-            obj, notification: Notification, data_message
-        ):  # skipcq: PYL-W0613
+            obj, notification: Notification, data_message  # skipcq: PYL-W0613
+        ):
             idstr = data_message.persistent_id + "\n"
             with open(persistent_path, "r") as f:
                 if idstr in f:
