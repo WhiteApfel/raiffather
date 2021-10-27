@@ -30,7 +30,8 @@ class RaiffatherC2C(RaiffatherBase):
         )
         if r.status_code == 200:
             logger.debug(
-                f"C2C prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
+                f"C2C prepared successfully. {r.request.method}: {r.url} "
+                f"-> {r.status_code}: {r.text}"
             )
             return True
         raise RaifErrorResponse(r)
@@ -47,8 +48,8 @@ class RaiffatherC2C(RaiffatherBase):
         )
         if r.status_code == 200:
             logger.debug(
-                f"C2C retrieved initial data successfully. {r.request.method}: {r.url} -> "
-                f"{r.status_code}: {r.text}"
+                f"C2C retrieved initial data successfully. {r.request.method}: {r.url} "
+                f"-> {r.status_code}: {r.text}"
             )
             return C2cRetrieve(**r.json())
         raise RaifErrorResponse(r)
@@ -171,7 +172,8 @@ class RaiffatherC2C(RaiffatherBase):
         )
         if e3dsotp_response.status_code == 200:
             logger.debug(
-                f"C2C got E3DS OTP data successfully. {e3dsotp_response.request.method}: "
+                f"C2C got E3DS OTP data successfully. "
+                f"{e3dsotp_response.request.method}: "
                 f"{e3dsotp_response.url} -> "
                 f"{e3dsotp_response.status_code}: {e3dsotp_response.text}"
             )

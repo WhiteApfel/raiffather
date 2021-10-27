@@ -311,14 +311,16 @@ class RaiffatherBase:
         Регистрация устройства для получения права на проведение операций
 
         Процесс регистрации подразумевает получение SMS-кода.
-        Его нужно будет передать в функцию ``self.register_device_verify(request_id, code)`` в течение двух минут
+        Его нужно будет передать в функцию
+        ``self.register_device_verify(request_id, code)`` в течение двух минут
 
         :return: request_id для последующего подтверждения кодом из SMS
         :rtype: ``str``
         """
         data = {
             "otp": {
-                "deviceName": f"{self.device.model} {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                "deviceName": f"{self.device.model} "
+                              f"{datetime.now().strftime('%Y-%m-%d %H:%M')}",
                 "deviceUid": self.device.uid,
                 "fingerPrint": self.device.fingerprint,
                 "pushId": self.device.push,
@@ -335,7 +337,8 @@ class RaiffatherBase:
         if register_response.status_code == 200:
             request_id = register_response.json()["requestId"]
             send_sms_response = await self._client.post(
-                f"https://amobile.raiffeisen.ru/rest/1/push-address/push/control/{request_id}/sms",
+                f"https://amobile.raiffeisen.ru"
+                f"/rest/1/push-address/push/control/{request_id}/sms",
                 headers=await self.authorized_headers,
                 json="",
             )
@@ -348,12 +351,14 @@ class RaiffatherBase:
         """
         Подтверждение регистрации устройства на право проведения операций
 
-        :param request_id: идентификатор запросу, его можно получить через метод ``self.register_device()``
+        :param request_id: идентификатор запросу, его можно получить через метод
+        ``self.register_device()``
         :param code: код подтверждения из SMS
         :return: результат истинности регистрации
         """
         verify_response = await self._client.put(
-            f"https://amobile.raiffeisen.ru/rest/1/push-address/push/control/{request_id}/sms",
+            f"https://amobile.raiffeisen.ru"
+            f"/rest/1/push-address/push/control/{request_id}/sms",
             headers=await self.authorized_headers,
             json={"code": str(code)},
         )
@@ -363,7 +368,9 @@ class RaiffatherBase:
 
     async def balance(self) -> list[Balance]:
         """
-        Общий баланс со всех счетов, рассчитанный по курсу ЦБ. В приложении отображается в самой верхней части.
+        Общий баланс со всех счетов, рассчитанный по курсу ЦБ. В приложении отображается
+        в самой верхней части.
+
         :return:
         """
         r = await self._client.get(

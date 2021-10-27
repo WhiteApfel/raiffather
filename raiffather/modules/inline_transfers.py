@@ -25,31 +25,36 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         )
         if r.status_code == 200:
             logger.debug(
-                f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
+                f"Internal transfer prepared successfully. {r.request.method}: "
+                f"{r.url} -> {r.status_code}: {r.text}"
             )
             return True
         raise RaifErrorResponse(r)
 
     async def internal_transfer_accounts_source(self):
         r = await self._client.get(
-            "https://amobile.raiffeisen.ru/rest/1/transfer/internal/account/source?alien=false",
+            "https://amobile.raiffeisen.ru"
+            "/rest/1/transfer/internal/account/source?alien=false",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
             logger.debug(
-                f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
+                f"Internal transfer prepared successfully. {r.request.method}: "
+                f"{r.url} -> {r.status_code}: {r.text}"
             )
             return Accounts(accounts=r.json())
         raise RaifErrorResponse(r)
 
     async def internal_transfer_accounts_destination(self):
         r = await self._client.get(
-            "https://amobile.raiffeisen.ru/rest/1/transfer/internal/account/destination?alien=false",
+            "https://amobile.raiffeisen.ru"
+            "/rest/1/transfer/internal/account/destination?alien=false",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
             logger.debug(
-                f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
+                f"Internal transfer prepared successfully. {r.request.method}: "
+                f"{r.url} -> {r.status_code}: {r.text}"
             )
             return Accounts(accounts=r.json())
         raise RaifErrorResponse(r)
@@ -66,8 +71,8 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         В ответе содержит список методов подтверждения.
 
         :param amount: сумма перевода
-        :param src: какой-либо идентификатор счёта-отправителя: id, cba, rma или название
-        :param dst: какой-либо идентификатор счёта-получателя: id, cba, rma или название
+        :param src: какой-либо идентификатор счёта-отправителя: id, cba, rma, название
+        :param dst: какой-либо идентификатор счёта-получателя: id, cba, rma,  название
         :param source_currency: True, если сумма указана в валюте счёта получателя
         :return:
         """
@@ -90,7 +95,8 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         )
         if r.status_code == 200:
             logger.debug(
-                f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
+                f"Internal transfer prepared successfully. {r.request.method}: "
+                f"{r.url} -> {r.status_code}: {r.text}"
             )
             return InternalTransferInit(**r.json())
         raise RaifErrorResponse(r)
@@ -107,14 +113,16 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         )
         if r.status_code == 204:
             logger.debug(
-                f"Internal transfer prepared successfully. {r.request.method}: {r.url} -> {r.status_code}: {r.text}"
+                f"Internal transfer prepared successfully. {r.request.method}: "
+                f"{r.url} -> {r.status_code}: {r.text}"
             )
             return True
         raise RaifErrorResponse(r)
 
     async def internal_transfer_send_push(self, request_id: Union[str, int]) -> str:
         """
-        Отправляет пуш-уведомление для подтверждение и ждёт, когда пуш-сервер его получит
+        Отправляет пуш-уведомление для подтверждение и ждёт,
+        когда пуш-сервер его получит
 
         :param request_id: номер заявки
         :return: код подтверждения

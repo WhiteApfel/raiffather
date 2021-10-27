@@ -43,7 +43,8 @@ class RaiffatherSbpQR(RaiffatherBase):
 
     async def sbp_qr_send_push(self, request_id: Union[str, int]) -> str:
         """
-        Отправляет пуш-уведомление для подтверждение и ждёт, когда пуш-сервер его получит
+        Отправляет пуш-уведомление для подтверждение и ждёт,
+        когда пуш-сервер его получит
 
         :param request_id: номер заявки
         :return: код подтверждения
@@ -51,7 +52,8 @@ class RaiffatherSbpQR(RaiffatherBase):
         data = {"deviceUid": self.device.uid, "pushId": self.device.push}
 
         send_code_response = await self._client.post(
-            f"https://amobile.raiffeisen.ru/dailybanking/ro/v1.0/c2b/process/transfer/{request_id}/push",
+            f"https://amobile.raiffeisen.ru"
+            f"/dailybanking/ro/v1.0/c2b/process/transfer/{request_id}/push",
             json=data,
             headers=await self.authorized_headers,
         )
@@ -72,7 +74,8 @@ class RaiffatherSbpQR(RaiffatherBase):
         :return: успешно ли
         """
         verify_response = await self._client.put(
-            f"https://amobile.raiffeisen.ru/dailybanking/ro/v1.0/c2b/process/transfer/{request_id}/push",
+            f"https://amobile.raiffeisen.ru"
+            f"/dailybanking/ro/v1.0/c2b/process/transfer/{request_id}/push",
             headers=await self.authorized_headers,
             json={"code": str(code)},
         )
