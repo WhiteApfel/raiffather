@@ -37,7 +37,8 @@ class Account(BaseModel):
             return self.balance < other
         raise ValueError(
             "Objects are compared by balance. "
-            "Cannot be compared to anything other than a int, float or other Account instance"
+            "Cannot be compared to anything other than a int, "
+            "float or other Account instance"
         )
 
 
@@ -75,7 +76,8 @@ class Card(BaseModel):
             return self.balance < other
         raise ValueError(
             "Objects are compared by balance. "
-            "Cannot be compared to anything other than a int, float or other Card instance"
+            "Cannot be compared to anything other than a int, "
+            "float or other Card instance"
         )
 
 
