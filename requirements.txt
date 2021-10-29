@@ -1,10 +1,10 @@
 asyncio~=3.4.3
-pullkin~=0.4.1a3
+pullkin~=0.5.0
 typing~=3.7.4.3
 pydantic~=1.8.2
 loguru~=0.5.3
 fuzzywuzzy~=0.18.0
 ipaddress~=1.0.23
-httpx~=0.18.2
+httpx~=0.20.0
 randmac~=0.1
 appdirs~=1.4.4
