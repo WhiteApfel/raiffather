@@ -6,7 +6,8 @@ from loguru import logger
 from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.exceptions.sbp import SBPRecipientNotFound
 from raiffather.models.products import Account
-from raiffather.models.sbp import SbpBank, SbpInit, SbpPam, SbpSettings, SbpCommission
+from raiffather.models.sbp import SbpBank, SbpInit, SbpPam, SbpSettings, SbpCommission, \
+    SbpBanks
 from raiffather.modules.base import RaiffatherBase
 
 logger.disable("raiffather")
@@ -40,7 +41,9 @@ class RaiffatherSBP(RaiffatherBase):
             json=data,
         )
         if sbp_banks_response.status_code == 200:
-            return [SbpBank(**bank) for bank in sbp_banks_response.json()]
+            return SbpBanks(
+                list=[SbpBank(**bank) for bank in sbp_banks_response.json()]
+            )
         raise RaifErrorResponse(sbp_banks_response)
 
     async def sbp_pam(self, bank_id: str, phone: str, cba: str = None) -> SbpPam:
