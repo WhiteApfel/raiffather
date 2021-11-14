@@ -168,4 +168,13 @@ class Transaction(BaseModel):
 
 class Transactions(BaseModel):
     list: List[Transaction]
-    total: int
+
+    def __add__(self, other):
+        if type(other) is Transactions or all([type(i) is Transaction for i in other]):
+            self.list.extend(other)
+
+    def __iter__(self):
+        return self.list
+
+    def __len__(self):
+        return len(self.list)
