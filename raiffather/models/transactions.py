@@ -165,6 +165,12 @@ class Transaction(BaseModel):
     merchant_logo_id: Optional[str] = Field(None, alias="merchantLogoId")
     details: Optional[Details] = None
 
+    def __add__(self, other):
+        if type(other) is Transaction:
+            return Transactions(
+                list=[self, other]
+            )
+
 
 class Transactions(BaseModel):
     list: List[Transaction]
