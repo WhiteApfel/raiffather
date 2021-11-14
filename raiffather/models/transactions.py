@@ -167,9 +167,7 @@ class Transaction(BaseModel):
 
     def __add__(self, other):
         if type(other) is Transaction:
-            return Transactions(
-                list=[self, other]
-            )
+            return Transactions(list=[self, other])
 
 
 class Transactions(BaseModel):

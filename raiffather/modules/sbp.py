@@ -6,8 +6,14 @@ from loguru import logger
 from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.exceptions.sbp import SBPRecipientNotFound
 from raiffather.models.products import Account
-from raiffather.models.sbp import SbpBank, SbpInit, SbpPam, SbpSettings, SbpCommission, \
-    SbpBanks
+from raiffather.models.sbp import (
+    SbpBank,
+    SbpInit,
+    SbpPam,
+    SbpSettings,
+    SbpCommission,
+    SbpBanks,
+)
 from raiffather.modules.base import RaiffatherBase
 
 logger.disable("raiffather")
