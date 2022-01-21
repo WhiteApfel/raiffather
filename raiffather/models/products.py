@@ -151,7 +151,7 @@ class Accounts(BaseModel):
         return [a for a in self.accounts if a.rma == str(rma)]
 
     def get_by_name(self, name):
-        return [a for a in self.accounts if a.id == str(name)]
+        return [a for a in self.accounts if a.name == str(name)]
 
     def __getitem__(self, item):
         found = []
