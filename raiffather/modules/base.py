@@ -19,7 +19,7 @@ from async_property import async_property
 from httpx import AsyncClient
 from loguru import logger
 from pullkin import AioPullkin
-from pullkin.proto.notification import Notification
+from pullkin.models.message import Message
 from randmac import RandMac
 
 from raiffather.exceptions.base import RaifErrorResponse
@@ -66,7 +66,10 @@ class RaiffatherBase:
                 await self.__aexit__()
 
     async def __aexit__(self, *args):
-        await self.pullkin.close()
+        try:
+            await self.pullkin.close()
+        except ValueError as e:  # httpcore ValueError: list.remove(x): x not in list
+            logger.opt(e).error("ValueError: ")
         await self.__client.aclose()
         if self.__receiving_push:
             self.__receiving_push.cancel()
@@ -82,7 +85,7 @@ class RaiffatherBase:
 
         @self.pullkin.on_notification()
         async def on_notification(
-            obj, notification: Notification, data_message  # skipcq: PYL-W0613
+            obj, notification: Message, data_message  # skipcq: PYL-W0613
         ):
             idstr = data_message.persistent_id + "\n"
             with open(persistent_path, "r") as f:
@@ -147,17 +150,12 @@ class RaiffatherBase:
         self.pullkin.persistent_ids = received_persistent_ids
         try:
             push_listener = await self.pullkin.listen_coroutine()
-        except asyncio.exceptions.CancelledError:
-            return
-        except ConnectionResetError:
-            return
-        try:
             while True:
                 await push_listener.asend(None)
         except asyncio.exceptions.CancelledError:
-            ...
+            return
         except ConnectionResetError:
-            ...
+            return
 
     async def wait_code(self, push_id):
         x = 0
