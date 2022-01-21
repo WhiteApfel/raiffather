@@ -26,7 +26,7 @@ class SbpBanks(BaseModel):
     list: list[SbpBank]
 
     def __iter__(self):
-        return self.list
+        return iter(self.list)
 
     def __getitem__(self, item):
         if str(item).isdigit():  # search by id
