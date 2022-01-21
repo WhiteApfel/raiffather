@@ -23,10 +23,13 @@ async def test_raif_balance():
 
 
 @pytest.mark.asyncio
-async def test_raif_empty_with():
+@pytest.mark.parametrize('wait', [
+    0, 0.25, 0.5, 1, 5
+])
+async def test_raif_task_0s(wait):
     r = Raiffather(environ.get("RAIF_USER"), environ.get("RAIF_PASSWD"))
     async with r:
-        ...
+        await asyncio.sleep(wait)
 
 
 @pytest.mark.asyncio
