@@ -175,10 +175,10 @@ class Transactions(BaseModel):
 
     def __add__(self, other):
         if type(other) is Transactions or all([type(i) is Transaction for i in other]):
-            self.list.extend(other)
+            return self.list.extend(other)
 
     def __iter__(self):
-        return self.list
+        return iter(self.list)
 
     def __len__(self):
         return len(self.list)
