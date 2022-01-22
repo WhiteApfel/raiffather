@@ -41,6 +41,18 @@ async def test_raif_accounts_euros():
 async def test_raif_accounts_business():
     async with Raiffather(environ.get("RAIF_USER"), environ.get("RAIF_PASSWD")) as r:
         products = await r.get_products()
-        for account in products.accounts.business.accounts:
+        for account in products.accounts.business:
             assert account.type_id == "BUSINESS"
             assert not account.rma
+
+
+@pytest.mark.asyncio
+async def test_raif_cards():
+    async with Raiffather(environ.get("RAIF_USER"), environ.get("RAIF_PASSWD")) as r:
+        products = await r.get_products()
+        for card in products.cards:
+            assert card == products.cards[card.id]
+            assert card == products.cards[card.icdb_id]
+            assert card == products.cards[card.pan[-4:]]
+            if card.name:
+                assert card == products.cards[card.name]
