@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal, Optional
+from typing import Iterable, Literal, Optional
 
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import Field
@@ -140,7 +140,7 @@ class Cards(BaseModel):
     def __len__(self):
         return len(self.cards)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[Card]:
         for c in self.cards:
             yield c
 
@@ -196,7 +196,7 @@ class Accounts(BaseModel):
     def __len__(self):
         return len(self.accounts)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[Account]:
         for a in self.accounts:
             yield a
 
