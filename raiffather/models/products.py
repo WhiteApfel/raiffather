@@ -137,6 +137,13 @@ class Cards(BaseModel):
     def mastercard(self):
         return Cards(cards=[c for c in self.cards if c.payment_system == "MasterCard"])
 
+    def __len__(self):
+        return len(self.cards)
+
+    def __iter__(self):
+        for c in self.cards:
+            yield c
+
 
 class Accounts(BaseModel):
     accounts: list[Account]
