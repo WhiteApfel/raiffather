@@ -88,7 +88,7 @@ class Cards(BaseModel):
         return [c for c in self.cards if c.id == int(card_id)]
 
     def get_by_icdb_id(self, icdb_id):
-        return [c for c in self.cards if c.icdb_id == str(icdb_id)]
+        return [c for c in self.cards if c.icdb_id == int(icdb_id)]
 
     def get_by_last_digits(self, last_digits):
         return [c for c in self.cards if c.pan[-4:] == str(last_digits)[-4:]]
