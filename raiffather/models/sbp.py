@@ -1,5 +1,6 @@
 from fuzzywuzzy import process
 from pydantic import BaseModel, Field
+from typing import Iterator, Optional
 
 from raiffather.models.balance import Currency
 
@@ -25,10 +26,10 @@ class SbpBank(BaseModel):
 class SbpBanks(BaseModel):
     list: list[SbpBank]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[SbpBank]:
         return iter(self.list)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> Optional[SbpBank]:
         if str(item).isdigit():  # search by id
             return process.extractOne(str(item), [b.id for b in self.list])[0]
         elif type(item) is str:  # search by name
