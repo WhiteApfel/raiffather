@@ -69,7 +69,10 @@ class RaiffatherBase:
         try:
             await self.pullkin.close()
         except ValueError as e:  # httpcore ValueError: list.remove(x): x not in list
-            logger.opt(e).error("ValueError: ")
+            logger.opt(exception=e).error("ValueError: ")
+        except RuntimeError as e:
+            if "The connection pool was closed while" not in str(e):
+                logger.opt(exception=e).error("RuntimeError: ")
         await self.__client.aclose()
         if self.__receiving_push:
             self.__receiving_push.cancel()
