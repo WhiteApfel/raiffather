@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 from loguru import logger
 
 from raiffather.exceptions.base import RaifErrorResponse, RaifUnauthorized
-from raiffather.models.transactions import Transactions, Transaction
+from raiffather.models.transactions import Transaction, Transactions
 from raiffather.modules.base import RaiffatherBase
 
 logger.disable("raiffather")

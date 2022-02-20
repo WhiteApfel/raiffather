@@ -1,6 +1,7 @@
+from typing import Iterator, Optional
+
 from fuzzywuzzy import process
 from pydantic import BaseModel, Field
-from typing import Iterator, Optional
 
 from raiffather.models.balance import Currency
 

@@ -1,13 +1,14 @@
 from typing import Union
 
+from loguru import logger
+
 from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.internal_transfers import (
-    InternalTransferInit,
     InternalTransferExchangeRate,
+    InternalTransferInit,
 )
 from raiffather.models.products import Account, Accounts
 from raiffather.modules.base import RaiffatherBase
-from loguru import logger
 
 logger.disable("raiffather")
 

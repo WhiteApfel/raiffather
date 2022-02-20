@@ -8,11 +8,11 @@ from raiffather.exceptions.sbp import SBPRecipientNotFound
 from raiffather.models.products import Account
 from raiffather.models.sbp import (
     SbpBank,
+    SbpBanks,
+    SbpCommission,
     SbpInit,
     SbpPam,
     SbpSettings,
-    SbpCommission,
-    SbpBanks,
 )
 from raiffather.modules.base import RaiffatherBase
 

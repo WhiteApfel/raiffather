@@ -1,6 +1,6 @@
+import asyncio
 from os import environ
 
-import asyncio
 import pytest
 
 from raiffather import Raiffather

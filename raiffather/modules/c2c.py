@@ -4,13 +4,13 @@ from loguru import logger
 
 from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.c2c import (
+    BinInfo,
+    C2cCard,
     C2cInit,
-    E3DSOTPData,
+    C2cNewCard,
     C2cRetrieve,
     C2cTpcOne,
-    C2cCard,
-    C2cNewCard,
-    BinInfo,
+    E3DSOTPData,
 )
 from raiffather.modules.base import RaiffatherBase
 
@@ -180,7 +180,9 @@ class RaiffatherC2C(RaiffatherBase):
             return E3DSOTPData(**e3dsotp_response.json())
         raise RaifErrorResponse(e3dsotp_response)
 
-    async def c2c_e3ds_pareq(self, acs_url: str, pareq: str, term_url: str = None) -> str:
+    async def c2c_e3ds_pareq(
+        self, acs_url: str, pareq: str, term_url: str = None
+    ) -> str:
         data = {
             "MD": "",
             "TermUrl": term_url or "https://imobile.raiffeisen.ru/3ds/1400474370",

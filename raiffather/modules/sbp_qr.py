@@ -2,7 +2,7 @@ from typing import Union
 
 from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.products import Account
-from raiffather.models.sbp_qr import SbpQRData, SbpQRInit, SbpQrInfo
+from raiffather.models.sbp_qr import SbpQRData, SbpQrInfo, SbpQRInit
 from raiffather.modules.base import RaiffatherBase
 
 
