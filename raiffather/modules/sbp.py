@@ -37,7 +37,14 @@ class RaiffatherSBP(RaiffatherBase):
             return SbpSettings(**settings_reponse.json())
         raise RaifErrorResponse(settings_reponse)
 
-    async def sbp_banks(self, phone, cba: str = None):
+    async def sbp_banks(self, phone, cba: str = None) -> SbpBanks:
+        """
+        Получение банков для получателя. Интересным является в ответе банк по умолчанию
+
+        :param phone: номер телефона получателя
+        :param cba: номер вашего аккаунта в ЦБ, можно узнать в self.sbp_settings()
+        :return: SbpBanks
+        """
         if not self.products:
             self.products = await self.get_products()
         data = {"phone": phone, "srcCba": cba or (await self.sbp_settings()).cba}
@@ -54,7 +61,7 @@ class RaiffatherSBP(RaiffatherBase):
 
     async def sbp_pam(self, bank_id: str, phone: str, cba: str = None) -> SbpPam:
         """
-        Не знаю, зачем это надо, но это обязательный этап проведения перевода по СБП
+        Внутри есть информация о лимитах
 
         :param bank_id: id банка получателя, можно узнать в self.sbp_banks()
         :param phone: номер телефона получателя
@@ -169,7 +176,7 @@ class RaiffatherSBP(RaiffatherBase):
             return [Account(**a) for a in accounts_response.json()]
         raise RaifErrorResponse(accounts_response)
 
-    def sbp_bank_fuzzy_search(self, banks: list, bank: str):
+    def sbp_bank_fuzzy_search(self, banks: list, bank: str) -> SbpBank:
         """
         Возвращает название банка из списка, название которого
         наиболее совпадает с искомым
@@ -220,16 +227,16 @@ class RaiffatherSBP(RaiffatherBase):
             return True
         raise RaifErrorResponse(verify_response)
 
-    async def sbp(self, phone: str, bank: str, amount: Union[float, int], comment=None):
+    async def sbp(self, phone: str, bank: str, amount: Union[float, int], comment=None) -> bool:
         """
         Единый метод для автоматического проведения всего перевода
 
         :param phone: номер телефона получателя
         :param bank: название банка получателя, можно в произвольной форме,
-        типа "Тинька" или "Райф"
+        типа "Тинька" или "Райф". Можно с ошибками.
         :param amount: сумма перевода в рублях
         :param comment: комментарий к переводу
-        :return: успешно ли
+        :return: bool
         """
         cba = (await self.sbp_settings()).cba
         await self.sbp_prepare()

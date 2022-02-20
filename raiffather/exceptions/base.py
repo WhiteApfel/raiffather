@@ -1,3 +1,6 @@
+from httpx import Response
+
+
 class RaifException(Exception):
     __module__ = "raiffather"
 
@@ -6,7 +9,7 @@ class RaifException(Exception):
 
 
 class RaifErrorResponse(RaifException):
-    def __new__(cls, response, *args, **kwargs):
+    def __new__(cls, response: Response, *args, **kwargs):
         if response.status_code == 401:
             return super(RaifErrorResponse, RaifUnauthorized).__new__(
                 RaifUnauthorized, response, *args, **kwargs
