@@ -9,3 +9,4 @@ ipaddress~=1.0.23
 httpx~=0.22.0
 randmac~=0.1
 appdirs~=1.4.4
+python-Levenshtein~=0.12.2
