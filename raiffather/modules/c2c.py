@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any, Union
 
 from loguru import logger
 
@@ -18,7 +18,7 @@ logger.disable("raiffather")
 
 
 class RaiffatherC2C(RaiffatherBase):
-    async def c2c_prepare(self):
+    async def c2c_prepare(self) -> bool:
         """
         Подготавливает к проведению перевода по номеру карты, обязательный пунктик
         :return: bool
@@ -36,7 +36,7 @@ class RaiffatherC2C(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def c2c_retrieve(self):
+    async def c2c_retrieve(self) -> C2cRetrieve:
         """
         Подготавливает к проведению перевода по номеру карты, обязательный пунктик
         :return: bool
@@ -59,7 +59,7 @@ class RaiffatherC2C(RaiffatherBase):
         src: Union[C2cTpcOne, C2cCard, str],
         dst: Union[C2cTpcOne, C2cCard, str],
         amount,
-    ):
+    ) -> dict[str, Any]:
         """
         Рассчитывает комиссию со стороны Райфа для перевода.
         Другие банки могут взять комиссию за стягивание или пополнение
@@ -108,7 +108,7 @@ class RaiffatherC2C(RaiffatherBase):
         amount,
         src: Union[C2cTpcOne, C2cCard, C2cNewCard],
         dst: Union[C2cTpcOne, C2cCard, C2cNewCard],
-    ):
+    ) -> C2cInit:
         """
         Инициализирует намерение перевода. Возвращает какие-то данные
         Нужная штука, если хотите сделать перевод, без неё вообще нельзя, гы
@@ -156,7 +156,7 @@ class RaiffatherC2C(RaiffatherBase):
         )
         raise RaifErrorResponse(r)
 
-    async def c2c_e3ds_start(self, request_id: Union[str, int]):
+    async def c2c_e3ds_start(self, request_id: Union[str, int]) -> E3DSOTPData:
         """
         Получение данных для перенаправления на 3DS
 
@@ -180,7 +180,7 @@ class RaiffatherC2C(RaiffatherBase):
             return E3DSOTPData(**e3dsotp_response.json())
         raise RaifErrorResponse(e3dsotp_response)
 
-    async def c2c_e3ds_pareq(self, acs_url: str, pareq: str, term_url: str = None):
+    async def c2c_e3ds_pareq(self, acs_url: str, pareq: str, term_url: str = None) -> str:
         data = {
             "MD": "",
             "TermUrl": term_url or "https://imobile.raiffeisen.ru/3ds/1400474370",
@@ -195,7 +195,7 @@ class RaiffatherC2C(RaiffatherBase):
             return r.text
         raise RaifErrorResponse(r)
 
-    async def c2c_e3ds_verify(self, request_id: Union[str, int], pares: str):
+    async def c2c_e3ds_verify(self, request_id: Union[str, int], pares: str) -> bool:
         data = {
             "pares": pares,
         }
@@ -208,7 +208,7 @@ class RaiffatherC2C(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def c2c_bin_info(self, card_bin: Union[str, int]):
+    async def c2c_bin_info(self, card_bin: Union[str, int]) -> BinInfo:
         r = await self._client.get(
             f"https://amobile.raiffeisen.ru/rest/transfer/c2c/bin/{card_bin}",
             headers=await self.authorized_headers,
