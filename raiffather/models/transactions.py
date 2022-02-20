@@ -45,44 +45,16 @@ class AccountType(BaseModel):
     name: str
 
 
-class Name2(BaseModel):
-    name: str
-
-
-class Currency1(BaseModel):
-    id: str
-    symbol: str
-    name: Name2
-    precision: int
-    code: str
-    short_name: str = Field(..., alias="shortName")
-    sort: int
-
-
 class Amount(BaseModel):
     value: float
     currency_id: str = Field(..., alias="currencyId")
-    currency: Currency1
-
-
-class Name3(BaseModel):
-    name: str
-
-
-class Currency2(BaseModel):
-    id: str
-    symbol: str
-    name: Name3
-    precision: int
-    code: str
-    short_name: str = Field(..., alias="shortName")
-    sort: int
+    currency: Currency
 
 
 class Amount1(BaseModel):
     value: float
     currency_id: str = Field(..., alias="currencyId")
-    currency: Currency2
+    currency: Currency
 
 
 class Posting(BaseModel):
