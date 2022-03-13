@@ -6,6 +6,7 @@ from pydantic.dataclasses import Field
 
 from raiffather.exceptions.base import RaifFoundMoreThanOneProduct, RaifProductNotFound
 from raiffather.models.balance import Currency
+from raiffather.models.internal_transfers import VerifyMethod
 
 
 class Account(BaseModel):
@@ -232,3 +233,32 @@ class Products(BaseModel):
     @validator("cards", pre=True)
     def validators_cards_pre(cls, v):
         return Cards(cards=v)
+
+
+class AccountDetails(BaseModel):
+    currency_id: str = Field(..., alias="currencyId")
+    currency: Currency
+
+    beneficiary: str
+    beneficiary_account: str = Field(..., alias="beneficiaryAccount")
+    beneficiary_inn: str = Field(..., alias="beneficiaryTin")
+
+    bank: str = Field(..., alias="beneficiaryBankName")
+    bank_inn: str = Field(..., alias="beneficiaryBankInn")
+    bank_kpp: str = Field(..., alias="beneficiaryBankKpp")
+    bank_bic: str = Field(..., alias="beneficiaryBankBic")
+    bank_account: str = Field(..., alias="beneficiaryBankAccount")
+
+    cnum: int
+
+
+class BaseVerifyInit(BaseModel):  # TODO: подумать, как лучше организовать, чтобы наследовать
+    request_id: int = Field(..., alias="requestId")
+    methods: list[VerifyMethod]
+    type_id: int = Field(..., alias="typeId")
+
+
+class CardDetails(BaseModel):
+    number: str = Field(..., alias="pan")
+    expires: str = Field(..., alias="expDate")
+    code: str = Field(..., alias="cvv")
