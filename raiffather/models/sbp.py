@@ -33,7 +33,7 @@ class SbpBanks(BaseModel):
     def __getitem__(self, item) -> Optional[SbpBank]:
         if str(item).isdigit():  # search by id
             return process.extractOne(str(item), [b.id for b in self.list])[0]
-        elif type(item) is str:  # search by name
+        if type(item) is str:  # search by name
             return process.extractOne(item, [b.name for b in self.list])[0]
 
 

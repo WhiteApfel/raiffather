@@ -147,7 +147,7 @@ class Transactions(BaseModel):
 
     def __add__(self, other):
         new_transactions = Transactions(list=self.list)
-        if type(other) is Transactions or all([type(i) is Transaction for i in other]):
+        if type(other) is Transactions or all(type(i) is Transaction for i in other):
             new_transactions.list.extend(other)
             return new_transactions
 
