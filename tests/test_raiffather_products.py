@@ -1,11 +1,8 @@
-import asyncio
 from os import environ
 
 import pytest
 
 from raiffather import Raiffather
-from raiffather.exceptions.base import RaifUnauthorized
-from raiffather.models.balance import Balance
 
 
 @pytest.mark.asyncio

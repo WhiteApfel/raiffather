@@ -227,7 +227,9 @@ class RaiffatherSBP(RaiffatherBase):
             return True
         raise RaifErrorResponse(verify_response)
 
-    async def sbp(self, phone: str, bank: str, amount: Union[float, int], comment=None) -> bool:
+    async def sbp(
+        self, phone: str, bank: str, amount: Union[float, int], comment=None
+    ) -> bool:
         """
         Единый метод для автоматического проведения всего перевода
 

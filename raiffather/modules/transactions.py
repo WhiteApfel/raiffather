@@ -2,7 +2,7 @@ from typing import AsyncGenerator
 
 from loguru import logger
 
-from raiffather.exceptions.base import RaifErrorResponse, RaifUnauthorized
+from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.transactions import Transaction, Transactions
 from raiffather.modules.base import RaiffatherBase
 

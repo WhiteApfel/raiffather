@@ -4,7 +4,6 @@ import json
 import os
 import re
 import time
-import traceback
 from asyncio import Task
 from datetime import datetime, timedelta, timezone
 from ipaddress import IPv4Address, IPv4Network

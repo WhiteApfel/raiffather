@@ -1,6 +1,6 @@
 from loguru import logger
 
-from raiffather.modules import *
+from raiffather.modules import *  # noqa: F403
 
 logger.disable("raiffather")
 

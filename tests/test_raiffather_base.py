@@ -9,7 +9,7 @@ from raiffather.models.balance import Balance
 
 
 def test_raif_init():
-    r = Raiffather(environ.get("RAIF_USER"), environ.get("RAIF_PASSWD"))
+    Raiffather(environ.get("RAIF_USER"), environ.get("RAIF_PASSWD"))
 
 
 @pytest.mark.asyncio
@@ -32,6 +32,6 @@ async def test_raif_task_0s(wait):
 
 @pytest.mark.asyncio
 async def test_raif_unauthorized():
-    with pytest.raises(RaifUnauthorized) as unauthorised:
-        async with Raiffather("example", "example") as r:
+    with pytest.raises(RaifUnauthorized):
+        async with Raiffather("example", "example"):
             ...

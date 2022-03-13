@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Iterable, Literal, Optional
+from typing import Iterable, Optional
 
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import Field
