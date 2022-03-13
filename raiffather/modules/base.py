@@ -19,6 +19,7 @@ from async_property import async_property
 from httpx import AsyncClient
 from loguru import logger
 from pullkin import AioPullkin
+from pullkin.models import AppCredentials
 from pullkin.models.message import Message
 from randmac import RandMac
 
@@ -149,7 +150,7 @@ class RaiffatherBase:
                         return
                     raise RaifErrorResponse(verify_received_response)
 
-        self.pullkin.credentials = self.device.fcm_cred
+        self.pullkin.credentials = AppCredentials(**self.device.fcm_cred)
         self.pullkin.persistent_ids = received_persistent_ids
         try:
             push_listener = await self.pullkin.listen_coroutine()
