@@ -3,6 +3,7 @@ from os import environ
 import pytest
 
 from raiffather import Raiffather
+from raiffather.exceptions.base import RaifIncrorrectRequest
 
 
 @pytest.mark.asyncio
@@ -53,3 +54,13 @@ async def test_raif_cards():
             assert card == products.cards[card.pan[-4:]]
             if card.name:
                 assert card == products.cards[card.name]
+
+
+@pytest.mark.asyncio
+async def test_raif_cards_details():
+    async with Raiffather(environ.get("RAIF_USER"), environ.get("RAIF_PASSWD")) as r:
+        products = await r.get_products()
+        for card in products.cards:
+            card_details = await r.get_card_details(card)
+            assert card.pan[:6] == card_details.number[:6]
+            assert card.pan[-4:] == card_details.number[-4:]

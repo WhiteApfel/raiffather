@@ -10,3 +10,6 @@ pydantic==1.9.0
 python-Levenshtein~=0.12.2
 randmac~=0.1
 typing~=3.7.4.3
+luhn~=0.2.0
+
+pytest~=7.0.1

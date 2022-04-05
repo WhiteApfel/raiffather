@@ -13,5 +13,6 @@ class Raiffather(
     RaiffatherSettings,
     RaiffatherInlineTransfers,
     RaiffatherOther,
+    RaiffatherProducts,
 ):
     ...

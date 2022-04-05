@@ -3,6 +3,7 @@ from typing import Iterable, Optional
 
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import Field
+from luhn import verify as luhn_verify
 
 from raiffather.exceptions.base import RaifFoundMoreThanOneProduct, RaifProductNotFound
 from raiffather.models.balance import Currency
@@ -252,8 +253,10 @@ class AccountDetails(BaseModel):
     cnum: int
 
 
-class BaseVerifyInit(BaseModel):  # TODO: подумать, как лучше организовать, чтобы наследовать
-    request_id: int = Field(..., alias="requestId")
+class BaseVerifyInit(
+    BaseModel
+):  # TODO: подумать, как лучше организовать, чтобы наследовать
+    request_id: str = Field(..., alias="requestId")
     methods: list[VerifyMethod]
     type_id: int = Field(..., alias="typeId")
 
@@ -262,3 +265,15 @@ class CardDetails(BaseModel):
     number: str = Field(..., alias="pan")
     expires: str = Field(..., alias="expDate")
     code: str = Field(..., alias="cvv")
+
+    @validator('number')
+    def validate_number(cls, number: str):
+        if len(number) == 16 and number.isdigit() and luhn_verify(number):
+            return number
+        raise ValueError('Wrong card number')
+
+    @validator('code')
+    def validate_code(cls, code: str):
+        if len(code) == 3 and code.isdigit():
+            return code
+        raise ValueError('Invalid secure code')
