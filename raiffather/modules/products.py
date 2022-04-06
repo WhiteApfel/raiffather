@@ -25,16 +25,16 @@ class RaiffatherProducts(RaiffatherBase):
             return AccountDetails(**r.json())
         raise RaifErrorResponse(r)
 
-    async def get_card_details_prepare(self):
+    async def get_card_details_prepare(self) -> bool:
         r = await self._client.get(
             "https://orc.ecom.raiffeisen.ru/display/requisites",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
-            return r.text
+            return True
         raise RaifErrorResponse(r)
 
-    async def get_card_details_check_cardholder(self, card: Card):
+    async def get_card_details_check_cardholder(self, card: Card) -> bool:
         r = await self._client.get(
             f"https://orc.ecom.raiffeisen.ru/display/requisites/card-holder-check/{card.icdb_id}",
             headers=await self.authorized_headers,
@@ -43,7 +43,7 @@ class RaiffatherProducts(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def get_card_details_request(self, card: Card):
+    async def get_card_details_init(self, card: Card) -> BaseVerifyInit:
         r = await self._client.post(
             "https://orc.ecom.raiffeisen.ru/display/requisites",
             headers=await self.authorized_headers,
@@ -63,9 +63,7 @@ class RaiffatherProducts(RaiffatherBase):
             json={"deviceUid": self.device.uid, "pushId": self.device.push},
         )
         if r.status_code == 201:
-            push_id = r.json()["pushId"]
-            otp = await self.wait_code(push_id)
-            return otp
+            return r.json()["pushId"]
         raise RaifErrorResponse(r)
 
     async def get_card_details_verify(
@@ -96,9 +94,10 @@ class RaiffatherProducts(RaiffatherBase):
     async def get_card_details(self, card: Card):
         # await self.get_card_details_prepare()
         await self.get_card_details_check_cardholder(card)
-        verify_init = await self.get_card_details_request(card)
-        code = await self.get_card_details_send_push(verify_init.request_id)
-        await self.get_card_details_verify(verify_init.request_id, code)
+        verify_init = await self.get_card_details_init(card)
+        push_id = await self.get_card_details_send_push(verify_init.request_id)
+        otp = await self.wait_code(push_id)
+        await self.get_card_details_verify(verify_init.request_id, otp)
         details = await self.get_card_details_receive(verify_init.request_id)
         return details
 
