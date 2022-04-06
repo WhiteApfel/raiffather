@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from ipaddress import IPv4Address, IPv4Network
 from pathlib import Path
 from random import choice, randint, randrange
+from ssl import SSLError
 from string import hexdigits
 from typing import Optional
 from uuid import uuid4
@@ -159,6 +160,10 @@ class RaiffatherBase:
             return
         except ConnectionResetError:
             return
+        except SSLError as e:
+            if 'APPLICATION_DATA_AFTER_CLOSE_NOTIFY' in str(e):
+                return
+            raise
 
     async def wait_code(self, push_id):
         x = 0
