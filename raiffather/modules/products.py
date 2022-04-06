@@ -91,7 +91,9 @@ class RaiffatherProducts(RaiffatherBase):
             return CardDetails(**r.json())
         raise RaifErrorResponse(r)
 
-    async def get_card_details(self, card: Card):
+    async def get_card_details(self, card: Union[str, int, Card]):
+        if not isinstance(card, Card):
+            card = self.products.cards[card]
         await self.get_card_details_prepare()
         await self.get_card_details_check_cardholder(card)
         verify_init = await self.get_card_details_init(card)
@@ -146,7 +148,9 @@ class RaiffatherProducts(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def change_card_pin(self, card: Card, pin: Union[str, int]):
+    async def change_card_pin(self, card: Union[str, int, Card], pin: Union[str, int]):
+        if not isinstance(card, Card):
+            card = self.products.cards[card]
         await self.change_card_pin_prepare()
         verify_init = await self.change_card_pin_init(card, pin)
         push_id = await self.change_card_pin_send_push(verify_init.request_id)
