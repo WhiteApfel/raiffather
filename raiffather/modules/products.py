@@ -8,7 +8,7 @@ from raiffather.models.products import (
     AccountDetails,
     BaseVerifyInit,
     Card,
-    CardDetails,
+    CardDetails, ChangePinVerifyInit,
 )
 from raiffather.modules.base import RaiffatherBase
 
@@ -31,7 +31,6 @@ class RaiffatherProducts(RaiffatherBase):
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
-            print(r.text)
             return r.text
         raise RaifErrorResponse(r)
 
@@ -102,4 +101,56 @@ class RaiffatherProducts(RaiffatherBase):
         await self.get_card_details_verify(verify_init.request_id, code)
         details = await self.get_card_details_receive(verify_init.request_id)
         return details
+
+    async def change_card_pin_prepare(self):
+        r = await self._client.get(
+            "https://e-commerce.raiffeisen.ru/ws/pinset/ro/v2.0/set/pin",
+            headers=await self.authorized_headers,
+        )
+        if r.status_code == 200:
+            return r.text
+        raise RaifErrorResponse(r)
+
+    async def change_card_pin_init(self, card: Card, pin: Union[str, int]):
+        r = await self._client.post(
+            "https://e-commerce.raiffeisen.ru/ws/pinset/ro/v2.0/set/pin",
+            headers=await self.authorized_headers,
+            json={
+                "cardId": card.icdb_id,
+                "pin": pin,
+            },
+        )
+        if r.status_code == 200:
+            return ChangePinVerifyInit(**r.json())
+        raise RaifErrorResponse(r)
+
+    async def change_card_pin_send_push(self, request_id: str) -> str:
+        r = await self._client.post(
+            f"https://e-commerce.raiffeisen.ru/ws/pinset/ro/v2.0/set/pin/{request_id}/push",
+            headers=await self.authorized_headers,
+            json={"deviceUid": self.device.uid, "pushId": self.device.push},
+        )
+        if r.status_code == 200:
+            return r.json()["pushId"]
+        raise RaifErrorResponse(r)
+
+    async def change_card_pin_verify(
+        self, request_id: str, code: Union[str, int]
+    ) -> bool:
+        logger.debug("Get card details...")
+        r = await self._client.put(
+            f"https://e-commerce.raiffeisen.ru/ws/pinset/ro/v2.0/set/pin/{request_id}/push",
+            headers=await self.authorized_headers,
+            json={"code": str(code)},
+        )
+        if r.status_code == 201:
+            return True
+        raise RaifErrorResponse(r)
+
+    async def change_card_pin(self, card: Card, pin: Union[str, int]):
+        await self.change_card_pin_prepare()
+        verify_init = await self.change_card_pin_init(card, pin)
+        push_id = await self.change_card_pin_send_push(verify_init.request_id)
+        otp = await self.wait_code(push_id)
+        await self.change_card_pin_verify(verify_init.request_id, otp)
 

@@ -64,3 +64,12 @@ async def test_raif_cards_details():
             card_details = await r.get_card_details(card)
             assert card.pan[:6] == card_details.number[:6]
             assert card.pan[-4:] == card_details.number[-4:]
+
+
+@pytest.mark.asyncio
+async def test_raif_change_card_pin():
+    async with Raiffather(environ.get("RAIF_USER"), environ.get("RAIF_PASSWD")) as r:
+        products = await r.get_products()
+        for card in products.cards:
+            await r.change_card_pin(card, 7898)
+

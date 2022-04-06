@@ -4,6 +4,7 @@ from typing import Iterable, Optional
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import Field
 from luhn import verify as luhn_verify
+from redis.commands.search import document
 
 from raiffather.exceptions.base import RaifFoundMoreThanOneProduct, RaifProductNotFound
 from raiffather.models.balance import Currency
@@ -253,12 +254,15 @@ class AccountDetails(BaseModel):
     cnum: int
 
 
-class BaseVerifyInit(
-    BaseModel
-):  # TODO: подумать, как лучше организовать, чтобы наследовать
+class BaseVerifyInit(BaseModel):  # TODO: подумать, как лучше организовать, чтобы наследовать
     request_id: str = Field(..., alias="requestId")
     methods: list[VerifyMethod]
     type_id: int = Field(..., alias="typeId")
+
+
+class ChangePinVerifyInit(BaseVerifyInit):
+    document: str
+    detail: dict
 
 
 class CardDetails(BaseModel):
