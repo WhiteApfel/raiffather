@@ -92,7 +92,7 @@ class RaiffatherProducts(RaiffatherBase):
         raise RaifErrorResponse(r)
 
     async def get_card_details(self, card: Card):
-        # await self.get_card_details_prepare()
+        await self.get_card_details_prepare()
         await self.get_card_details_check_cardholder(card)
         verify_init = await self.get_card_details_init(card)
         push_id = await self.get_card_details_send_push(verify_init.request_id)
