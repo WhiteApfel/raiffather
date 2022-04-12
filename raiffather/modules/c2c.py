@@ -38,8 +38,8 @@ class RaiffatherC2C(RaiffatherBase):
 
     async def c2c_retrieve(self) -> C2cRetrieve:
         """
-        Подготавливает к проведению перевода по номеру карты, обязательный пунктик
-        :return: bool
+        Получение сохранённых карт
+        :return: C2cRetrieve
         """
         logger.debug("C2C retrieve initial data...")
         r = await self._client.get(
