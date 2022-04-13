@@ -4,6 +4,7 @@ from fuzzywuzzy import process
 from pydantic import BaseModel, Field
 
 from raiffather.models.balance import Currency
+from raiffather.models.base import BaseVerifyInit
 
 
 class SbpBankChannel(BaseModel):
@@ -65,9 +66,7 @@ class SbpInitDetail(BaseModel):
     client: str
 
 
-class SbpInit(BaseModel):
-    request_id: str = Field(..., alias="requestId")
-    type_id: str = Field(..., alias="typeId")
+class SbpInit(BaseVerifyInit):
     detail: SbpInitDetail
     document: str
 

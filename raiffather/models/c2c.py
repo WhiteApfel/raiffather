@@ -3,6 +3,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field, validator
 
 from raiffather.exceptions.base import RaifFoundMoreThanOneProduct, RaifProductNotFound
+from raiffather.models.base import TemplatableVerifyInit
 from raiffather.models.products import Card
 
 
@@ -24,14 +25,9 @@ class C2cInitDetails(BaseModel):
     comission_amount: C2cInitDetailsMoney
 
 
-class C2cInit(BaseModel):
-    request_id: str = Field(..., alias="requestId")
+class C2cInit(TemplatableVerifyInit):
     operation_type: int = Field(..., alias="operationType")
-    document: str
-    methods: list[C2cInitMethod]
     details: dict
-    templates_allowed: bool = Field(..., alias="templatesAllowed")
-    templates_signed: bool = Field(..., alias="templatesSigned")
 
 
 class E3DSOTPData(BaseModel):

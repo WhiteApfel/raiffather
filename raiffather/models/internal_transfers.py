@@ -3,9 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
-class VerifyMethod(BaseModel):
-    method: Literal["PUSHOTP", "SMSOTP", "STUBOTP"]
+from raiffather.models.base import TemplatableVerifyInit, VerifyMethod
 
 
 class InternalTransferDetail(BaseModel):
@@ -16,16 +14,8 @@ class InternalTransferDetail(BaseModel):
     client: str
 
 
-class InternalTransferInit(BaseModel):
-    request_id: int = Field(..., alias="requestId")
-    methods: list[VerifyMethod]
+class InternalTransferInit(TemplatableVerifyInit):
     detail: InternalTransferDetail
-    document: str
-    type_id: int = Field(..., alias="typeId")
-
-    @property
-    def stub_allowed(self):
-        return VerifyMethod(method="STUBOTP") in self.methods
 
 
 class InternalTransferExchangeRate(BaseModel):

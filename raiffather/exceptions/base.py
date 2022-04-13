@@ -20,7 +20,7 @@ class RaifErrorResponse(RaifException):
             )
         return super(RaifErrorResponse, cls).__new__(cls, response, *args, **kwargs)
 
-    def __init__(self, response, *args, **kwargs):
+    def __init__(self, response: Response, *args, **kwargs):
         self.status_code = response.status_code
         if "_form" in response.text:
             self.text = response.json()["_form"]

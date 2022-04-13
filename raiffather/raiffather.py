@@ -14,5 +14,6 @@ class Raiffather(
     RaiffatherInlineTransfers,
     RaiffatherOther,
     RaiffatherProducts,
+    RaiffatherServicePayments,
 ):
     ...

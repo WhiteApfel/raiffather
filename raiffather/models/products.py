@@ -8,12 +8,13 @@ from redis.commands.search import document
 
 from raiffather.exceptions.base import RaifFoundMoreThanOneProduct, RaifProductNotFound
 from raiffather.models.balance import Currency
+from raiffather.models.base import BaseVerifyInit
 from raiffather.models.internal_transfers import VerifyMethod
 
 
 class Account(BaseModel):
     id: int
-    procuration_credentials: dict = Field(..., alias="procurationCredentials")
+    procuration_credentials: Optional[dict] = Field(None, alias="procurationCredentials")
     alien: bool
     cba: str
     rma: Optional[str]
@@ -47,7 +48,7 @@ class Account(BaseModel):
 
 class Card(BaseModel):
     id: int
-    procuration_credentials: dict = Field(..., alias="procurationCredentials")
+    procuration_credentials: Optional[dict] = Field(None, alias="procurationCredentials")
     account: Optional[Account]
     alien: bool
     icdb_id: int = Field(..., alias="icdbId")
@@ -252,12 +253,6 @@ class AccountDetails(BaseModel):
     bank_account: str = Field(..., alias="beneficiaryBankAccount")
 
     cnum: int
-
-
-class BaseVerifyInit(BaseModel):  # TODO: подумать, как лучше организовать, чтобы наследовать
-    request_id: str = Field(..., alias="requestId")
-    methods: list[VerifyMethod]
-    type_id: int = Field(..., alias="typeId")
 
 
 class ChangePinVerifyInit(BaseVerifyInit):
