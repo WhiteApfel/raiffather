@@ -8,6 +8,7 @@ from raiffather.models.internal_transfers import (
     InternalTransferInit,
 )
 from raiffather.models.products import Account, Accounts
+from raiffather.modules._helpers import extend_product_types
 from raiffather.modules.base import RaiffatherBase
 
 logger.disable("raiffather")
@@ -60,11 +61,12 @@ class RaiffatherInlineTransfers(RaiffatherBase):
             return Accounts(accounts=r.json())
         raise RaifErrorResponse(r)
 
+    @extend_product_types
     async def internal_transfer_init(
         self,
         amount: Union[float, int],
-        src: Union[str, int, Account],
-        dst: Union[str, int, Account],
+        src: Account,
+        dst: Account,
         source_currency: bool = True,
     ):
         """
@@ -77,10 +79,6 @@ class RaiffatherInlineTransfers(RaiffatherBase):
         :param source_currency: True, если сумма указана в валюте счёта получателя
         :return:
         """
-        if type(src) in [int, str]:
-            src = self.products.accounts[src]
-        if type(dst) in [int, str]:
-            dst = self.products.accounts[dst]
         data = {
             "amount": float(amount),
             "amountInSrcCurrency": source_currency,

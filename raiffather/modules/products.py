@@ -10,12 +10,14 @@ from raiffather.models.products import (
     Card,
     CardDetails, ChangePinVerifyInit,
 )
+from raiffather.modules._helpers import extend_product_types
 from raiffather.modules.base import RaiffatherBase
 
 logger.disable("raiffather")
 
 
 class RaiffatherProducts(RaiffatherBase):
+    @extend_product_types
     async def get_account_details(self, account: Account):
         r = await self._client.get(
             f"https://amobile.raiffeisen.ru/rest/1/product/account/{account.id}/requisites",
@@ -34,6 +36,7 @@ class RaiffatherProducts(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
+    @extend_product_types
     async def get_card_details_check_cardholder(self, card: Card) -> bool:
         r = await self._client.get(
             f"https://orc.ecom.raiffeisen.ru/display/requisites/card-holder-check/{card.icdb_id}",
@@ -43,6 +46,7 @@ class RaiffatherProducts(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
+    @extend_product_types
     async def get_card_details_init(self, card: Card) -> BaseVerifyInit:
         r = await self._client.post(
             "https://orc.ecom.raiffeisen.ru/display/requisites",
@@ -91,9 +95,8 @@ class RaiffatherProducts(RaiffatherBase):
             return CardDetails(**r.json())
         raise RaifErrorResponse(r)
 
-    async def get_card_details(self, card: Union[str, int, Card]):
-        if not isinstance(card, Card):
-            card = self.products.cards[card]
+    @extend_product_types
+    async def get_card_details(self, card: Card):
         await self.get_card_details_prepare()
         await self.get_card_details_check_cardholder(card)
         verify_init = await self.get_card_details_init(card)
@@ -112,6 +115,7 @@ class RaiffatherProducts(RaiffatherBase):
             return r.text
         raise RaifErrorResponse(r)
 
+    @extend_product_types
     async def change_card_pin_init(self, card: Card, pin: Union[str, int]):
         r = await self._client.post(
             "https://e-commerce.raiffeisen.ru/ws/pinset/ro/v2.0/set/pin",
@@ -148,12 +152,11 @@ class RaiffatherProducts(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def change_card_pin(self, card: Union[str, int, Card], pin: Union[str, int]):
-        if not isinstance(card, Card):
-            card = self.products.cards[card]
+    @extend_product_types
+    async def change_card_pin(self, card: Card, pin: Union[str, int]):
         await self.change_card_pin_prepare()
-        verify_init = await self.change_card_pin_init(card, pin)
-        push_id = await self.change_card_pin_send_push(verify_init.request_id)
-        otp = await self.wait_code(push_id)
-        await self.change_card_pin_verify(verify_init.request_id, otp)
+        verify_init = await self.change_card_pin_init(card=card, pin=pin)
+        push_id = await self.change_card_pin_send_push(request_id=verify_init.request_id)
+        otp = await self.wait_code(push_id=push_id)
+        await self.change_card_pin_verify(request_id=verify_init.request_id, code=otp)
 

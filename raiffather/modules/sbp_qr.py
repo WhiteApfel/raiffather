@@ -3,6 +3,7 @@ from typing import Union
 from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.products import Account
 from raiffather.models.sbp_qr import SbpQRData, SbpQrInfo, SbpQRInit
+from raiffather.modules._helpers import extend_product_types
 from raiffather.modules.base import RaiffatherBase
 
 
@@ -16,10 +17,11 @@ class RaiffatherSbpQR(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
+    @extend_product_types
     async def sbp_qr_pay_init(
         self,
         amount: Union[float, int],
-        src: Union[Account, str, int],
+        src: Account,
         qr_data: SbpQRData,
     ):
         data = {
@@ -28,7 +30,7 @@ class RaiffatherSbpQR(RaiffatherBase):
             "crc": qr_data.crc,
             "qrc_id": qr_data.qrc,
             "qrcType": qr_data.qrc_type,
-            "srcCba": src if type(src) is Account else self.products.accounts[src],
+            "srcCba": src.cba,
             "currency": "RUB",
             "paymentPurpose": "",
         }

@@ -3,6 +3,7 @@ from typing import Optional, Union
 from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.products import Card
 from raiffather.models.service_payments import TopUpMobileAccountProviderInfo, TopUpMobileAccountVerify
+from raiffather.modules._helpers import extend_product_types
 from raiffather.modules.base import RaiffatherBase
 
 
@@ -18,6 +19,7 @@ class RaiffatherServicePayments(RaiffatherBase):
             return TopUpMobileAccountProviderInfo(**provider_response.json())
         raise RaifErrorResponse(provider_response)
 
+    @extend_product_types
     async def top_up_mobile_account_init(
         self,
         phone_number: str,
