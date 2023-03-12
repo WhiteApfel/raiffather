@@ -29,8 +29,15 @@ class ResponseOwner(BaseModel):
     actual_address: str = Field(..., alias="actualAddress")
 
 
-class OauthResponse(BaseModel):
+class OauthMfaResponse(BaseModel):
     access_token: str
+    expires_in: int
+    token_type: str
+
+
+class OauthFreshTokensResponse(BaseModel):
+    access_token: str
+    refresh_token: str | None
     expires_in: int
     resource_owner: ResponseOwner
     password_expires_in: datetime

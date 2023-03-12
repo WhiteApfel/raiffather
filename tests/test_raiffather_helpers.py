@@ -1,6 +1,6 @@
+import asyncio
 from os import environ
 
-import asyncio
 import pytest
 
 from raiffather import Raiffather
@@ -12,5 +12,6 @@ async def test_raif_top_up_mobile_account():
     async with r:
         print(await r.change_card_pin(card=r.products.cards[1].id, pin="7195"))
         await asyncio.sleep(2)
+
 
 asyncio.run(test_raif_top_up_mobile_account())

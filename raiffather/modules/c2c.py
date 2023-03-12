@@ -172,7 +172,7 @@ class RaiffatherC2C(RaiffatherBase):
         )
         if e3dsotp_response.status_code == 200:
             logger.debug(
-                f"C2C got E3DS OTP data successfully. "
+                "C2C got E3DS OTP data successfully. "
                 f"{e3dsotp_response.request.method}: "
                 f"{e3dsotp_response.url} -> "
                 f"{e3dsotp_response.status_code}: {e3dsotp_response.text}"

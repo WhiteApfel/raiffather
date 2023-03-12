@@ -1,10 +1,9 @@
 from datetime import date
 from typing import Iterable, Optional
 
+from luhn import verify as luhn_verify
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import Field
-from luhn import verify as luhn_verify
-from redis.commands.search import document
 
 from raiffather.exceptions.base import RaifFoundMoreThanOneProduct, RaifProductNotFound
 from raiffather.models.balance import Currency
@@ -14,7 +13,9 @@ from raiffather.models.internal_transfers import VerifyMethod
 
 class Account(BaseModel):
     id: int
-    procuration_credentials: Optional[dict] = Field(None, alias="procurationCredentials")
+    procuration_credentials: Optional[dict] = Field(
+        None, alias="procurationCredentials"
+    )
     alien: bool
     cba: str
     rma: Optional[str]
@@ -48,7 +49,9 @@ class Account(BaseModel):
 
 class Card(BaseModel):
     id: int
-    procuration_credentials: Optional[dict] = Field(None, alias="procurationCredentials")
+    procuration_credentials: Optional[dict] = Field(
+        None, alias="procurationCredentials"
+    )
     account: Optional[Account]
     alien: bool
     icdb_id: int = Field(..., alias="icdbId")
@@ -265,14 +268,14 @@ class CardDetails(BaseModel):
     expires: str = Field(..., alias="expDate")
     code: str = Field(..., alias="cvv")
 
-    @validator('number')
+    @validator("number")
     def validate_number(cls, number: str):
         if len(number) == 16 and number.isdigit() and luhn_verify(number):
             return number
-        raise ValueError('Wrong card number')
+        raise ValueError("Wrong card number")
 
-    @validator('code')
+    @validator("code")
     def validate_code(cls, code: str):
         if len(code) == 3 and code.isdigit():
             return code
-        raise ValueError('Invalid secure code')
+        raise ValueError("Invalid secure code")

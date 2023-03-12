@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,7 +10,7 @@ class VerifyMethod(BaseModel):
 class BaseVerifyInit(BaseModel):
     request_id: str = Field(..., alias="requestId")
     methods: list[VerifyMethod]
-    type_id: int = Field(..., alias="typeId")
+    type_id: Optional[int] = Field(None, alias="typeId")
 
     @property
     def stub_allowed(self):

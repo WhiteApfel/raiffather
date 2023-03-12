@@ -56,14 +56,14 @@ class SbpCommission(BaseModel):
 class SbpInitDetail(BaseModel):
     src_cba: str = Field(..., alias="srcCba")
     phone: str
-    bank_id: str = Field(..., alias="bankId")
+    # bank_id: str = Field(..., alias="bankId")
     amount: float
     commission: str
     recipient: str
     message: str
     bank_name: str = Field(..., alias="bankName")
-    channel: str
-    client: str
+    channel: dict
+    # client: str
 
 
 class SbpInit(BaseVerifyInit):

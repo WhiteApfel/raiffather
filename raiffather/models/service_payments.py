@@ -15,13 +15,13 @@ class TopUpMobileAccountProviderInfo(BaseModel):
     parameters: list
     scan_code_available: bool = Field(..., alias="scanCodeAvailable")
 
-    @validator('name', pre=True)
+    @validator("name", pre=True)
     def improve_name(cls, pre_name):
-        return pre_name['name']
+        return pre_name["name"]
 
-    @validator('short_name', pre=True)
+    @validator("short_name", pre=True)
     def improve_short_name(cls, pre_short_name):
-        return pre_short_name['name']
+        return pre_short_name["name"]
 
 
 class TopUpMobileAccountVerify(TemplatableVerifyInit):

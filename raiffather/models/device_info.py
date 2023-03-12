@@ -23,3 +23,4 @@ class DeviceInfo(BaseModel):
     fingerprint: str
     uuid: str
     fcm_cred: dict
+    refresh_token: str | None

@@ -8,15 +8,9 @@ T = TypeVar("T")
 
 def extend_product_types(func: T) -> T:
     def wrapper(self, **kwargs) -> T:
-
         def check_and_set_product(kwname, product) -> bool:
-            if (
-                not isinstance(kwargs[kwname], product)
-                and
-                (
-                    isinstance(kwargs[kwname], str)
-                    or isinstance(kwargs[kwname], int)
-                )
+            if not isinstance(kwargs[kwname], product) and (
+                isinstance(kwargs[kwname], str) or isinstance(kwargs[kwname], int)
             ):
                 if product is Card:
                     kwargs[kwname] = self.products.cards[kwargs[kwname]]
@@ -27,7 +21,7 @@ def extend_product_types(func: T) -> T:
             return False
 
         for kwparam, hint in func.__annotations__.items():
-            if kwparam == 'return':
+            if kwparam == "return":
                 continue
             if isinstance(hint, types.UnionType):
                 hint: types.UnionType
@@ -57,4 +51,5 @@ def extend_product_types(func: T) -> T:
                     if check_and_set_product(kwparam, Card):
                         continue
         return func(self, **kwargs)
+
     return wrapper

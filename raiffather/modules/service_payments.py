@@ -2,18 +2,23 @@ from typing import Optional, Union
 
 from raiffather.exceptions.base import RaifErrorResponse
 from raiffather.models.products import Card
-from raiffather.models.service_payments import TopUpMobileAccountProviderInfo, TopUpMobileAccountVerify
+from raiffather.models.service_payments import (
+    TopUpMobileAccountProviderInfo,
+    TopUpMobileAccountVerify,
+)
 from raiffather.modules._helpers import extend_product_types
 from raiffather.modules.base import RaiffatherBase
 
 
 class RaiffatherServicePayments(RaiffatherBase):
-    async def top_up_mobile_account_get_provider_info(self, phone_number: str) -> TopUpMobileAccountProviderInfo:
+    async def top_up_mobile_account_get_provider_info(
+        self, phone_number: str
+    ) -> TopUpMobileAccountProviderInfo:
         phone_number = phone_number if phone_number[0] == "7" else f"7{phone_number}"
         provider_response = await self._client.get(
             "https://amobile.raiffeisen.ru/rest/payment/online/provider/mobile",
             headers=await self.authorized_headers,
-            params={"phone": phone_number}
+            params={"phone": phone_number},
         )
         if provider_response.status_code == 200:
             return TopUpMobileAccountProviderInfo(**provider_response.json())
@@ -38,7 +43,7 @@ class RaiffatherServicePayments(RaiffatherBase):
                 {
                     "name": "account",
                     "value": phone_number.lstrip("7"),
-                }
+                },
             ],
             "providerId": str(provider_id),
             "template": save_template,
@@ -64,7 +69,9 @@ class RaiffatherServicePayments(RaiffatherBase):
             return r.json()["pushId"]
         raise RaifErrorResponse(r)
 
-    async def top_up_mobile_account_verify(self, request_id: str, code: Union[str, int]) -> bool:
+    async def top_up_mobile_account_verify(
+        self, request_id: str, code: Union[str, int]
+    ) -> bool:
         r = await self._client.put(
             f"https://amobile.raiffeisen.ru/rest/payment/online/{request_id}/push",
             headers=await self.authorized_headers,

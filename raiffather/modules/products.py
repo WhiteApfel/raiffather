@@ -8,7 +8,8 @@ from raiffather.models.products import (
     AccountDetails,
     BaseVerifyInit,
     Card,
-    CardDetails, ChangePinVerifyInit,
+    CardDetails,
+    ChangePinVerifyInit,
 )
 from raiffather.modules._helpers import extend_product_types
 from raiffather.modules.base import RaiffatherBase
@@ -83,9 +84,7 @@ class RaiffatherProducts(RaiffatherBase):
             return True
         raise RaifErrorResponse(r)
 
-    async def get_card_details_receive(
-        self, request_id: str
-    ) -> CardDetails:
+    async def get_card_details_receive(self, request_id: str) -> CardDetails:
         logger.debug("Get card details...")
         r = await self._client.get(
             f"https://orc.ecom.raiffeisen.ru/display/requisites/{request_id}",
@@ -156,7 +155,8 @@ class RaiffatherProducts(RaiffatherBase):
     async def change_card_pin(self, card: Card, pin: Union[str, int]):
         await self.change_card_pin_prepare()
         verify_init = await self.change_card_pin_init(card=card, pin=pin)
-        push_id = await self.change_card_pin_send_push(request_id=verify_init.request_id)
+        push_id = await self.change_card_pin_send_push(
+            request_id=verify_init.request_id
+        )
         otp = await self.wait_code(push_id=push_id)
         await self.change_card_pin_verify(request_id=verify_init.request_id, code=otp)
-

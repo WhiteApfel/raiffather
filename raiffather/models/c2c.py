@@ -22,7 +22,7 @@ class C2cInitDetails(BaseModel):
     amount: C2cInitDetailsMoney
     src_amount: C2cInitDetailsMoney = Field(..., alias="srcAmount")
     dst_amount: C2cInitDetailsMoney = Field(..., alias="dstAmount")
-    comission_amount: C2cInitDetailsMoney
+    commission_amount: C2cInitDetailsMoney
 
 
 class C2cInit(TemplatableVerifyInit):

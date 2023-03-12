@@ -72,4 +72,3 @@ async def test_raif_change_card_pin():
         products = await r.get_products()
         for card in products.cards:
             await r.change_card_pin(card, 7898)
-

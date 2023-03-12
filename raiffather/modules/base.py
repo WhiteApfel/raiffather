@@ -23,8 +23,12 @@ from pullkin.models import AppCredentials
 from pullkin.models.message import Message
 from randmac import RandMac
 
-from raiffather.exceptions.base import RaifErrorResponse
-from raiffather.models.auth import OauthResponse, ResponseOwner
+from raiffather.exceptions.base import RaifErrorResponse, RaifInvalidLoginPassword
+from raiffather.models.auth import (
+    OauthFreshTokensResponse,
+    OauthMfaResponse,
+    ResponseOwner,
+)
 from raiffather.models.balance import Balance
 from raiffather.models.device_info import DeviceInfo
 from raiffather.models.products import Products
@@ -53,10 +57,9 @@ class RaiffatherBase:
         self.__receiving_push: Task = None
 
     async def __aenter__(self):
+        failed = True
         try:
-            failed = True
-            if not self.products:
-                self.products = await self.get_products()
+            # if not self.produ   await self.get_products()
             self.__receiving_push = asyncio.get_event_loop().create_task(
                 self._push_server()
             )
@@ -161,7 +164,7 @@ class RaiffatherBase:
         except ConnectionResetError:
             return
         except SSLError as e:
-            if 'APPLICATION_DATA_AFTER_CLOSE_NOTIFY' in str(e):
+            if "APPLICATION_DATA_AFTER_CLOSE_NOTIFY" in str(e):
                 return
             raise
 
@@ -185,57 +188,181 @@ class RaiffatherBase:
     def device_geo_timestamp(self) -> str:
         return str(int(time.time() * 1000))
 
-    def oauth_token_data(self) -> dict:
+    def refresh_token_data(self) -> dict:
         return {
-            "logon_type": "login_password",
-            "device_geo_lat": "58.4736657",
-            "device_geo_lon": "42.1861797",
-            "device_geo_timestamp": self.device_geo_timestamp,
-            "grant_type": "password",
+            "logon_type": "pin",
+            "refresh_token": self.device.refresh_token,
+            "grant_type": "refresh_token",
             "device_install_id": self.device.uuid,
-            "password": self.__password,
             "platform": "android",
-            "username": self.__username,
-            "version": "5050059",
+            "version": self.device.app_version.replace(".", "0"),
         }
 
-    def preauth_bearer_token(self):
-        return base64.b64encode(b"oauthUser:oauthPassword!@").decode()
+    def preauth_token(self):
+        return base64.b64encode(
+            b"android-p-usr:PsHI5X5AKDESv4bykUp3eqOOvzALV}9C"
+        ).decode()
+
+    def _update_refresh_token(self, refresh_token: str):
+        self.device.refresh_token = refresh_token
+        filedir = f"{self.__app_dirs.user_data_dir}/{self.__app_name}"
+        filename = f"{filedir}/raiffather_device_info.json"
+        with open(filename, "w+") as f:
+            f.write(self.device.json())
 
     @async_property
     async def _access_token(self):
-        if not self.__access_token or self.__access_token[1] < time.time():
-            await self._auth()
+        if (
+            not self.__access_token or self.__access_token[1] < time.time()
+        ) and self.device.refresh_token is not None:
+            await self._refresh_tokens()
+        elif self.device.refresh_token is None:
+            raise ValueError("You should log in to raiffeisen with MFA")
         return self.__access_token[0]
 
-    async def _auth(self):
+    async def _mfa_send_code(self, mfa_token: str) -> bool:
         headers = {
-            "Authorization": f"Basic {self.preauth_bearer_token()}",
+            "Authorization": f"Basic {self.preauth_token()}",
             "User-Agent": "Raiffeisen 5.50.59 / Google Pixel Pfel (Android 11) / false",
             "RC-Device": "android",
+            "X-Device-Id": self.device.uuid,
+        }
+        data = {
+            "mfa_token": mfa_token,
         }
         r = await self._client.post(
-            "https://amobile.raiffeisen.ru/oauth/token",
-            json=self.oauth_token_data(),
+            "https://amobile.raiffeisen.ru/id/oauth/mfa/otp/send",
+            json=data,
+            headers=headers,
+        )
+        return r.status_code == 200
+
+    async def mfa_send_code(self) -> OauthMfaResponse:
+        headers = {
+            "Authorization": f"Basic {self.preauth_token()}",
+            "User-Agent": (
+                f"Raiffeisen {self.device.app_version} / {self.device.name} / false"
+            ),
+            "RC-Device": "android",
+        }
+        # TODO: Add phone auth (without username)
+        data = {
+            "logon_type": "login_password",
+            "username": self.__username,
+            "grant_type": "password",
+            "device_install_id": self.device.uuid,
+            "platform": "android",
+            "version": self.device.app_version.replace(".", "0"),
+        }
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/id/oauth/id/token",
+            json=data,
             headers=headers,
         )
         if r.status_code == 200:
-            parsed_r = OauthResponse(**r.json())
-            self.me = parsed_r.resource_owner
+            parsed_username_response = OauthMfaResponse(**r.json())
+            # TODO: сделать проверку на случай, если это не mfa токен
+            await self._mfa_send_code(parsed_username_response.access_token)
+            return parsed_username_response
+        raise RaifErrorResponse(r)
+
+    async def mfa_verify_code(self, mfa_token: str, code: str) -> OauthMfaResponse:
+        headers = {
+            "Authorization": f"Basic {self.preauth_token()}",
+            "User-Agent": (
+                f"Raiffeisen {self.device.app_version} / {self.device.name} / false"
+            ),
+            "RC-Device": "android",
+        }
+        data = {
+            "code": code,
+            "mfa_token": mfa_token,
+            "grant_type": "mfa-otp",
+            "device_install_id": self.device.uuid,
+            "platform": "android",
+            "version": self.device.app_version.replace(".", "0"),
+        }
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/id/oauth/id/token",
+            json=data,
+            headers=headers,
+        )
+        if r.status_code == 200:
+            parsed_username_response = OauthMfaResponse(**r.json())
+            # TODO: сделать проверку на случай, если это не mrfa токен
+            return parsed_username_response
+        raise RaifErrorResponse(r)
+        # {
+        #     "error": "wrong_otp",
+        #     "error_description": "Wrong OTP code.",
+        # }
+
+    async def mfa_password(self, mfa_token: str) -> OauthFreshTokensResponse:
+        headers = {
+            "Authorization": f"Basic {self.preauth_token()}",
+            "User-Agent": (
+                f"Raiffeisen {self.device.app_version} / {self.device.name} / false"
+            ),
+            "RC-Device": "android",
+        }
+        data = {
+            "password": self.__password,
+            "mfa_token": mfa_token,
+            "grant_type": "mfa-otp",
+            "device_install_id": self.device.uuid,
+            "platform": "android",
+            "version": self.device.app_version.replace(".", "0"),
+        }
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/id/oauth/id/token",
+            json=data,
+            headers=headers,
+        )
+        if r.status_code == 200:
+            tokens_response = OauthFreshTokensResponse(**r.json())
+            self.me = tokens_response.resource_owner
+            # TODO: сделать проверку на случай, если это не mfa токен
+            self._update_refresh_token(tokens_response.refresh_token)
+            return tokens_response
+        elif r.is_client_error:
+            if r.json().get("error") == "invalid_grant":
+                raise RaifInvalidLoginPassword(r)
+        raise RaifErrorResponse(r)
+
+    async def _refresh_tokens(self) -> OauthFreshTokensResponse:
+        headers = {
+            "Authorization": f"Basic {self.preauth_token()}",
+            "User-Agent": (
+                f"Raiffeisen {self.device.app_version} / {self.device.name} / false"
+            ),
+            "RC-Device": "android",
+        }
+        r = await self._client.post(
+            "https://amobile.raiffeisen.ru/id/oauth/id/token",
+            json=self.refresh_token_data(),
+            headers=headers,
+        )
+        if r.status_code == 200:
+            refresh_response = OauthFreshTokensResponse(**r.json())
+            self.me = refresh_response.resource_owner
             self.__access_token = (
-                parsed_r.access_token,
-                int(time.time()) + parsed_r.expires_in - 2,
+                refresh_response.access_token,
+                int(time.time()) + refresh_response.expires_in - 2,
             )
-            return parsed_r
+            self._update_refresh_token(refresh_response.refresh_token)
+            return refresh_response
         raise RaifErrorResponse(r)
 
     @async_property
     async def authorized_headers(self):
         return {
             "Authorization": f"Bearer {await self._access_token}",
-            "User-Agent": f"Raiffeisen {self.device.app_version} / {self.device.model} "
-            f"({self.device.os} {self.device.os_version}) / false",
+            "User-Agent": (
+                f"Raiffeisen {self.device.app_version} / {self.device.model} "
+                f"({self.device.os} {self.device.os_version}) / false"
+            ),
             "RC-Device": "android",
+            "X-Device-Id": self.device.uuid,
         }
 
     @property
@@ -254,7 +381,7 @@ class RaiffatherBase:
                     )
                 )
                 data = {
-                    "app_version": "5.50.59",
+                    "app_version": "5.93.07",
                     "router_ip": str(random_ip),
                     "router_mac": "02:00:00:00:00:00",
                     "ip": "fe80::cc10:57ff:fe41:f1a7",
@@ -270,13 +397,14 @@ class RaiffatherBase:
                     "os_version": "11",
                     "uid": "".join([choice(hexdigits[:-6]) for _ in range(40)]),
                     "model": "WhiteApfel Raiffather",
-                    "push": fcm_cred["fcm"]["token"],
+                    "push": fcm_cred.fcm.token,
                     "user_security_hash": "".join(
                         [choice("1234567890ABCDEF") for _ in range(40)]
                     ),
                     "fingerprint": str(randint(1000000000, 9999999999)),
-                    "uuid": uuid4().hex,
-                    "fcm_cred": fcm_cred,
+                    "uuid": str(uuid4()),
+                    "fcm_cred": fcm_cred.dict(),
+                    "refresh_token": None,
                 }
                 json.dump(data, open(filename, "w+"))
                 self.__device_info = DeviceInfo(**data)
@@ -325,8 +453,9 @@ class RaiffatherBase:
         """
         data = {
             "otp": {
-                "deviceName": f"{self.device.model} "
-                f"{datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                "deviceName": (
+                    f"{self.device.model} {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                ),
                 "deviceUid": self.device.uid,
                 "fingerPrint": self.device.fingerprint,
                 "pushId": self.device.push,
@@ -343,7 +472,7 @@ class RaiffatherBase:
         if register_response.status_code == 200:
             request_id = register_response.json()["requestId"]
             send_sms_response = await self._client.post(
-                f"https://amobile.raiffeisen.ru"
+                "https://amobile.raiffeisen.ru"
                 f"/rest/1/push-address/push/control/{request_id}/sms",
                 headers=await self.authorized_headers,
                 json="",
@@ -363,7 +492,7 @@ class RaiffatherBase:
         :return: результат истинности регистрации
         """
         verify_response = await self._client.put(
-            f"https://amobile.raiffeisen.ru"
+            "https://amobile.raiffeisen.ru"
             f"/rest/1/push-address/push/control/{request_id}/sms",
             headers=await self.authorized_headers,
             json={"code": str(code)},

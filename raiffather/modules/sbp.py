@@ -29,13 +29,35 @@ class RaiffatherSBP(RaiffatherBase):
         :return: Информация о настройках СБП
         :rtype: SbpSettings
         """
-        settings_reponse = await self._client.get(
-            "https://amobile.raiffeisen.ru/rest/1/sbp/settings",
+        settings_response = await self._client.get(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/phone/settings",
             headers=await self.authorized_headers,
         )
-        if settings_reponse.status_code == 200:
-            return SbpSettings(**settings_reponse.json())
-        raise RaifErrorResponse(settings_reponse)
+        if settings_response.status_code == 200:
+            return SbpSettings(**settings_response.json())
+        raise RaifErrorResponse(settings_response)
+
+    async def sbp_stored_banks(self, phone) -> SbpBanks:
+        """
+        Получение банков для получателя. Интересным является в ответе банк по умолчанию
+
+        :param phone: номер телефона получателя
+        :param cba: номер вашего аккаунта в ЦБ, можно узнать в self.sbp_settings()
+        :return: SbpBanks
+        """
+        if not self.products:
+            self.products = await self.get_products()
+        data = {"phone": phone}
+        sbp_banks_response = await self._client.post(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/phone/stored-banks",
+            headers=await self.authorized_headers,
+            json=data,
+        )
+        if sbp_banks_response.status_code == 200:
+            return SbpBanks(
+                list=[SbpBank(**bank) for bank in sbp_banks_response.json()]
+            )
+        raise RaifErrorResponse(sbp_banks_response)
 
     async def sbp_banks(self, phone, cba: str = None) -> SbpBanks:
         """
@@ -59,7 +81,7 @@ class RaiffatherSBP(RaiffatherBase):
             )
         raise RaifErrorResponse(sbp_banks_response)
 
-    async def sbp_pam(self, bank_id: str, phone: str, cba: str = None) -> SbpPam:
+    async def sbp_pam(self, bank_id: str, phone: str, cba: str = None) -> dict:
         """
         Внутри есть информация о лимитах
 
@@ -74,12 +96,30 @@ class RaiffatherSBP(RaiffatherBase):
             "srcCba": cba or (await self.sbp_settings()).cba,
         }
         r = await self._client.post(
-            "https://amobile.raiffeisen.ru/rest/1/transfer/contact/pam",
+            "https://amobile.raiffeisen.ru/rest/2/transfer/phone/pam",
             headers=await self.authorized_headers,
             json=data,
         )
         if r.status_code == 200:
-            return SbpPam(**r.json())
+            return r.json()
+            # TODO: add model
+            # {
+            #   "pams": [
+            #     {
+            #       "priority": true,
+            #       "channel": {
+            #         "id": 2,
+            #         "name": "SBP"
+            #       },
+            #       "recipient": "Никита Артемович Б",
+            #       "limits": {
+            #         "maxAmount": 300000.00,
+            #         "minAmount": 0.00
+            #       }
+            #     }
+            #   ],
+            #   "errors": []
+            # }
         if r.status_code == 417:
             raise SBPRecipientNotFound(r.json()["_form"][0])
         raise RaifErrorResponse(r)
@@ -102,14 +142,14 @@ class RaiffatherSBP(RaiffatherBase):
             "phone": phone,
             "srcCba": cba or (await self.sbp_settings()).cba,
         }
-        comission_response = await self._client.post(
-            "https://amobile.raiffeisen.ru/rest/1/transfer/contact/commission",
+        commission_response = await self._client.post(
+            "https://amobile.raiffeisen.ru/rest/1/transfer/phone/commission",
             headers=await self.authorized_headers,
             json=data,
         )
-        if comission_response.status_code == 200:
-            return SbpCommission(**comission_response.json())
-        raise RaifErrorResponse(comission_response)
+        if commission_response.status_code == 200:
+            return SbpCommission(**commission_response.json())
+        raise RaifErrorResponse(commission_response)
 
     async def sbp_init(
         self,
@@ -132,8 +172,9 @@ class RaiffatherSBP(RaiffatherBase):
         data = {
             "amount": float(amount),
             "bankId": int(bank),
-            # "commission": 0.0,
-            # "currency": "810",
+            "commission": 0.0,
+            "currency": "810",
+            "channelId": "2",
             "message": message or "",
             "phone": phone,
             "recipient": "",
@@ -142,7 +183,7 @@ class RaiffatherSBP(RaiffatherBase):
             "template": False,
         }
         init_response = await self._client.post(
-            "https://amobile.raiffeisen.ru/rest/1/transfer/contact",
+            "https://amobile.raiffeisen.ru/rest/1/transfer/phone/operation",
             headers=await self.authorized_headers,
             json=data,
         )
@@ -156,7 +197,7 @@ class RaiffatherSBP(RaiffatherBase):
         :return: bool
         """
         r = await self._client.get(
-            "https://amobile.raiffeisen.ru/rest/1/transfer/contact",
+            "https://amobile.raiffeisen.ru/rest/1/transfer/phone/operation",
             headers=await self.authorized_headers,
         )
         if r.status_code == 200:
@@ -169,7 +210,7 @@ class RaiffatherSBP(RaiffatherBase):
         :return: list[Account]
         """
         accounts_response = await self._client.get(
-            "https://amobile.raiffeisen.ru/rest/1/transfer/contact/account?alien=false",
+            "https://amobile.raiffeisen.ru/rest/1/transfer/phone/account?alien=false",
             headers=await self.authorized_headers,
         )
         if accounts_response.status_code == 200:
@@ -189,20 +230,21 @@ class RaiffatherSBP(RaiffatherBase):
 
     async def sbp_send_push(self, request_id: Union[str, int]) -> str:
         """
-        Отправляет пуш-уведомление для подтверждение и ждёт,
+        Отправляет пуш-уведомление для подтверждения и ждёт,
         когда пуш-сервер его получит
 
         :param request_id: номер заявки
         :return: код подтверждения
         """
+        print(self.device.push)
         data = {"deviceUid": self.device.uid, "pushId": self.device.push}
 
         send_code_response = await self._client.post(
-            f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push",
+            f"https://amobile.raiffeisen.ru/rest/1/transfer/phone/operation/{request_id}/push",
             json=data,
             headers=await self.authorized_headers,
         )
-        if send_code_response.status_code == 201:
+        if send_code_response.status_code == 200:
             push_id = send_code_response.json()["pushId"]
             otp = await self.wait_code(push_id)
             return otp
@@ -219,11 +261,11 @@ class RaiffatherSBP(RaiffatherBase):
         :return: успешно ли
         """
         verify_response = await self._client.put(
-            f"https://amobile.raiffeisen.ru/rest/1/transfer/contact/{request_id}/push",
+            f"https://amobile.raiffeisen.ru/rest/1/transfer/phone/operation/{request_id}/push",
             headers=await self.authorized_headers,
             json={"code": str(code)},
         )
-        if verify_response.status_code == 204:
+        if verify_response.is_success:
             return True
         raise RaifErrorResponse(verify_response)
 

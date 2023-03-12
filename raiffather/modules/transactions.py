@@ -24,7 +24,7 @@ class RaiffatherTransactions(RaiffatherBase):
         :return: Transactions
         """
         transactions_response = await self._client.get(
-            f"https://amobile.raiffeisen.ru/rths/history/v1/transactions?"
+            "https://amobile.raiffeisen.ru/rths/history/v1/transactions?"
             f"size={size}&sort=date&page={page}&order={'desc' if desc else 'asc'}",
             headers=await self.authorized_headers,
             timeout=20,

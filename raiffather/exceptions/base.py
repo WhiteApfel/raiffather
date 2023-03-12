@@ -29,10 +29,15 @@ class RaifErrorResponse(RaifException):
         else:
             self.text = response.text
         self.response = response
-        super().__init__(f"{self.status_code}: {self.text}", *args, **kwargs)
+        super().__init__(f"{self.status_code}: `{self.text}`", *args, **kwargs)
 
 
 class RaifIncrorrectRequest(RaifErrorResponse):
+    def __init__(self, response, *args, **kwargs):
+        super().__init__(response, *args, *kwargs)
+
+
+class RaifInvalidLoginPassword(RaifErrorResponse):
     def __init__(self, response, *args, **kwargs):
         super().__init__(response, *args, *kwargs)
 
